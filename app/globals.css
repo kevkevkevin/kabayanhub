@@ -1,9 +1,94 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* default values (will be overridden by kh-light / kh-dark) */
+  --kh-bg: #0b1120;
+  --kh-bg-card: #020617;
+  --kh-bg-subtle: #020617;
+
+  --kh-text: #e5e7eb;
+  --kh-text-secondary: #9ca3af;
+  --kh-text-muted: #6b7280;
+
+  --kh-border: #1f2937;
+  --kh-border-strong: #374151;
+
+  --kh-card-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+
+  --kh-blue: #0033a0;
+  --kh-yellow: #fcd116;
+  --kh-red: #ce1126;
+
+  --kh-blue-soft: #1d3b7a;
+  --kh-yellow-soft: #3f2a00;
+  --kh-red-soft: #4c1010;
 }
+
+/* Filipino flag–themed soft gradient background */
+.kh-bg-pattern {
+  background:
+    radial-gradient(circle at top left, rgba(37, 99, 235, 0.18), transparent 55%),
+    radial-gradient(circle at top right, rgba(250, 204, 21, 0.2), transparent 55%),
+    radial-gradient(circle at bottom right, rgba(239, 68, 68, 0.18), transparent 60%),
+    var(--kh-bg);
+}
+
+
+/* LIGHT MODE — clean PH-inspired palette */
+.kh-light {
+  --kh-bg: #f9fafb;
+  --kh-bg-card: #ffffff;
+  --kh-bg-subtle: #f3f4f6;
+
+  --kh-text: #111827;
+  --kh-text-secondary: #4b5563;
+  --kh-text-muted: #6b7280;
+
+  --kh-border: #e5e7eb;
+  --kh-border-strong: #d1d5db;
+
+  --kh-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  --kh-blue: #0033a0;
+  --kh-yellow: #fcd116;
+  --kh-red: #ce1126;
+
+  --kh-blue-soft: #e8f0ff;
+  --kh-yellow-soft: #fff7d1;
+  --kh-red-soft: #fce2e2;
+}
+
+/* DARK MODE — your old vibe, but using vars */
+.kh-dark {
+  --kh-bg: #020617;
+  --kh-bg-card: #020617;
+  --kh-bg-subtle: #020617;
+
+  --kh-text: #e5e7eb;
+  --kh-text-secondary: #9ca3af;
+  --kh-text-muted: #6b7280;
+
+  --kh-border: #1f2937;
+  --kh-border-strong: #374151;
+
+  --kh-card-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+
+  --kh-blue: #60a5fa;
+  --kh-yellow: #fcd116;
+  --kh-red: #f97373;
+
+  --kh-blue-soft: #1d3b7a;
+  --kh-yellow-soft: #3f2a00;
+  --kh-red-soft: #4c1010;
+}
+
+/* Apply vars to document */
+html,
+body {
+  background-color: var(--kh-bg);
+  color: var(--kh-text);
+}
+
 
 @theme inline {
   --color-background: var(--background);
@@ -23,4 +108,113 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* --- Kabayan Hub theme toggles --- */
+
+html.kh-dark {
+  color-scheme: dark;
+}
+
+html.kh-light {
+  color-scheme: light;
+}
+
+/* Light mode – override some darker Tailwind classes */
+html.kh-light body {
+  background-color: #f9fafb !important;
+  color: #0f172a;
+}
+
+/* Make the main gradient lighter in light mode */
+html.kh-light .kh-shell {
+  background: radial-gradient(circle at top, #eff6ff 0, #ffffff 40%, #fee2e2 100%);
+}
+
+/* Common background classes we used, force them lighter */
+html.kh-light .bg-slate-950,
+html.kh-light .bg-slate-900,
+html.kh-light .bg-slate-950\/70,
+html.kh-light .bg-slate-900\/70 {
+  background-color: #ffffff !important;
+}
+
+html.kh-light .text-slate-50,
+html.kh-light .text-slate-100,
+html.kh-light .text-slate-200,
+html.kh-light .text-slate-300 {
+  color: #0f172a !important;
+}
+
+html.kh-light .border-slate-800,
+html.kh-light .border-white\/5,
+html.kh-light .border-white\/10,
+html.kh-light .border-white\/15 {
+  border-color: #e5e7eb !important;
+}
+
+/* Keep your yellow KP pills visible in light mode */
+html.kh-light .bg-\[\#FCD116\] {
+  color: #111827 !important;
+}
+
+
+/* --- Fun KP coin animation --- */
+@keyframes kp-float {
+  0% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-8px) translateX(3px) rotate(5deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0px) translateX(0px) rotate(0deg);
+    opacity: 0.7;
+  }
+}
+
+.kp-coin {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+  animation: kp-float 4s ease-in-out infinite;
+}
+
+/* delay helpers so coins move differently */
+.kp-coin-delay-1 {
+  animation-delay: 0.2s;
+}
+.kp-coin-delay-2 {
+  animation-delay: 0.7s;
+}
+.kp-coin-delay-3 {
+  animation-delay: 1.3s;
+}
+
+/* --- Simple Saudi skyline strip --- */
+.saudi-skyline {
+  background: linear-gradient(
+    to top,
+    rgba(15, 23, 42, 0.28),
+    rgba(15, 23, 42, 0.02)
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.saudi-skyline::before {
+  content: "";
+  position: absolute;
+  inset: 30% 6% 0 6%;
+  background:
+    linear-gradient(to top, rgba(15, 23, 42, 0.65), transparent 60%),
+    repeating-linear-gradient(
+      to right,
+      rgba(15, 23, 42, 0.9),
+      rgba(15, 23, 42, 0.9) 6px,
+      transparent 6px,
+      transparent 14px
+    );
+  border-radius: 999px 999px 0 0;
+  opacity: 0.7;
 }
