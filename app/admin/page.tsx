@@ -61,6 +61,7 @@ type PurchaseRecord = {
   userDisplayName?: string | null;
   price?: number;
   createdAt?: any;
+  status?: "pending" | "redeemed";
 };
 
 export default function AdminPage() {
@@ -87,6 +88,11 @@ export default function AdminPage() {
   const [editingNewsId, setEditingNewsId] = useState<string | null>(null);
   const [editingVideoId, setEditingVideoId] = useState<string | null>(null);
   const [editingMarketId, setEditingMarketId] = useState<string | null>(null);
+
+  // For marking purchase redeemed
+  const [updatingPurchaseId, setUpdatingPurchaseId] = useState<string | null>(
+    null
+  );
 
   // Forms
   const [newsForm, setNewsForm] = useState({
@@ -169,13 +175,21 @@ export default function AdminPage() {
       try {
         setError(null);
 
-        const [newsSnap, videoSnap, marketSnap, purchaseSnap] = await Promise.all(
-          [
+        const [newsSnap, videoSnap, marketSnap, purchaseSnap] =
+          await Promise.all([
             getDocs(
-              query(collection(db, "news"), orderBy("createdAt", "desc"), limit(50))
+              query(
+                collection(db, "news"),
+                orderBy("createdAt", "desc"),
+                limit(50)
+              )
             ),
             getDocs(
-              query(collection(db, "videos"), orderBy("createdAt", "desc"), limit(50))
+              query(
+                collection(db, "videos"),
+                orderBy("createdAt", "desc"),
+                limit(50)
+              )
             ),
             getDocs(
               query(
@@ -191,8 +205,7 @@ export default function AdminPage() {
                 limit(200)
               )
             ),
-          ]
-        );
+          ]);
 
         const n: NewsItem[] = [];
         newsSnap.forEach((d) => {
@@ -254,6 +267,7 @@ export default function AdminPage() {
             userDisplayName: data.userDisplayName || null,
             price: data.price,
             createdAt: data.createdAt,
+            status: (data.status as "pending" | "redeemed") || "pending",
           });
         });
         setPurchases(p);
@@ -483,9 +497,7 @@ export default function AdminPage() {
     try {
       const price = parseInt(marketForm.price || "50", 10);
       const stock =
-        marketForm.stock.trim() === ""
-          ? null
-          : parseInt(marketForm.stock, 10);
+        marketForm.stock.trim() === "" ? null : parseInt(marketForm.stock, 10);
 
       if (editingMarketId) {
         const ref = doc(db, "marketplaceItems", editingMarketId);
@@ -549,6 +561,39 @@ export default function AdminPage() {
       }
     } finally {
       setBusy(false);
+    }
+  };
+
+  /* ───────────── Mark purchase as redeemed ───────────── */
+  const handleMarkPurchaseRedeemed = async (purchaseId: string) => {
+    try {
+      setUpdatingPurchaseId(purchaseId);
+      setError(null);
+      setStatus(null);
+
+      const ref = doc(db, "marketplacePurchases", purchaseId);
+      await updateDoc(ref, {
+        status: "redeemed",
+        redeemedAt: serverTimestamp(),
+      });
+
+      setPurchases((prev) =>
+        prev.map((p) =>
+          p.id === purchaseId ? { ...p, status: "redeemed" } : p
+        )
+      );
+      setStatus("Marked as redeemed ✅");
+    } catch (err: any) {
+      console.error("Failed to mark redeemed:", err);
+      if (err?.code === "permission-denied") {
+        setError(
+          "Permission denied when updating purchase. Check Firestore rules for marketplacePurchases."
+        );
+      } else {
+        setError("Failed to update purchase status. Please try again.");
+      }
+    } finally {
+      setUpdatingPurchaseId(null);
     }
   };
 
@@ -673,33 +718,35 @@ export default function AdminPage() {
 
       {/* Tabs */}
       <div className="inline-flex overflow-hidden rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-card)] text-[11px]">
-        {(["news", "videos", "marketplace", "purchases"] as Tab[]).map((tab) => {
-          const label =
-            tab === "news"
-              ? "News"
-              : tab === "videos"
-              ? "Tutorials"
-              : tab === "marketplace"
-              ? "Marketplace"
-              : "Purchases";
-          const isActive = activeTab === tab;
-          return (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-1.5 transition ${
-                isActive
-                  ? "bg-[var(--kh-blue)] text-white"
-                  : "text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)]"
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
+        {(["news", "videos", "marketplace", "purchases"] as Tab[]).map(
+          (tab) => {
+            const label =
+              tab === "news"
+                ? "News"
+                : tab === "videos"
+                ? "Tutorials"
+                : tab === "marketplace"
+                ? "Marketplace"
+                : "Purchases";
+            const isActive = activeTab === tab;
+            return (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-4 py-1.5 transition ${
+                  isActive
+                    ? "bg-[var(--kh-blue)] text-white"
+                    : "text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)]"
+                }`}
+              >
+                {label}
+              </button>
+            );
+          }
+        )}
       </div>
 
-      {/* Panels */}
+      {/* NEWS TAB */}
       {activeTab === "news" && (
         <section className="grid gap-4 md:grid-cols-[1.1fr,1fr]">
           {/* Form */}
@@ -887,6 +934,7 @@ Starting this month, OFWs must ensure:
         </section>
       )}
 
+      {/* VIDEOS TAB */}
       {activeTab === "videos" && (
         <section className="grid gap-4 md:grid-cols-[1.1fr,1fr]">
           {/* Form */}
@@ -1090,6 +1138,7 @@ Starting this month, OFWs must ensure:
         </section>
       )}
 
+      {/* MARKETPLACE TAB */}
       {activeTab === "marketplace" && (
         <section className="grid gap-4 md:grid-cols-[1.1fr,1fr]">
           {/* Form */}
@@ -1299,7 +1348,7 @@ Starting this month, OFWs must ensure:
             </div>
           </div>
 
-          {/* Recent purchase log */}
+          {/* Recent purchase log with status + Mark redeemed */}
           <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)] text-xs">
             <h2 className="mb-2 text-sm font-semibold text-[var(--kh-text)]">
               Recent purchases ({purchases.length})
@@ -1310,31 +1359,60 @@ Starting this month, OFWs must ensure:
                 if (p.createdAt && p.createdAt.toDate) {
                   created = p.createdAt.toDate();
                 }
+                const isRedeemed = p.status === "redeemed";
+
                 return (
                   <div
                     key={p.id}
-                    className="rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-2"
+                    className="flex flex-col justify-between rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-2 md:flex-row md:items-center"
                   >
-                    <p className="text-[11px] font-medium text-[var(--kh-text)]">
-                      {p.itemTitle}{" "}
-                      <span className="text-[10px] text-[var(--kh-text-muted)]">
-                        — {p.userDisplayName || p.userEmail || p.userId}
+                    <div className="flex-1 pr-2">
+                      <p className="text-[11px] font-medium text-[var(--kh-text)]">
+                        {p.itemTitle}{" "}
+                        <span className="text-[10px] text-[var(--kh-text-muted)]">
+                          — {p.userDisplayName || p.userEmail || p.userId}
+                        </span>
+                      </p>
+                      <p className="text-[10px] text-[var(--kh-text-muted)]">
+                        Price: {p.price ?? "?"} KP
+                        {created && (
+                          <>
+                            {" "}
+                            ·{" "}
+                            {created.toLocaleDateString()}{" "}
+                            {created.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </>
+                        )}
+                      </p>
+                    </div>
+
+                    <div className="mt-2 flex items-center gap-2 md:mt-0">
+                      <span
+                        className={`inline-flex items-center rounded-full px-3 py-1 text-[10px] font-semibold ${
+                          isRedeemed
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
+                        }`}
+                      >
+                        {isRedeemed ? "Redeemed" : "Pending"}
                       </span>
-                    </p>
-                    <p className="text-[10px] text-[var(--kh-text-muted)]">
-                      Price: {p.price ?? "?"} KP
-                      {created && (
-                        <>
-                          {" "}
-                          ·{" "}
-                          {created.toLocaleDateString()}{" "}
-                          {created.toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
-                        </>
+
+                      {!isRedeemed && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkPurchaseRedeemed(p.id)}
+                          disabled={updatingPurchaseId === p.id}
+                          className="rounded-full bg-[var(--kh-blue)] px-3 py-1 text-[10px] font-semibold text-white hover:brightness-110 disabled:opacity-60"
+                        >
+                          {updatingPurchaseId === p.id
+                            ? "Saving…"
+                            : "Mark redeemed"}
+                        </button>
                       )}
-                    </p>
+                    </div>
                   </div>
                 );
               })}

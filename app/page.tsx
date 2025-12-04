@@ -281,50 +281,146 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Important PH Gov Links */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">
-          Important Philippine government links for OFWs
-        </h2>
-        <p className="text-[11px] text-[var(--kh-text-secondary)] md:text-xs">
-          Official sites you may need for benefits, contributions, and
-          documents. Always double-check info on the{" "}
-          <span className="font-semibold">official websites</span>.
-        </p>
+      {/* ──────────────────────────────── */}
+{/* 🇵🇭 PH GOVERNMENT LINKS */}
+{/* ──────────────────────────────── */}
+<section className="mt-10 space-y-4">
+  <h2 className="text-xl font-semibold text-[var(--kh-text)]">
+    🇵🇭 Philippine Government Services
+  </h2>
 
-        <div className="grid gap-3 md:grid-cols-3">
-          <GovLinkCard
-            name="DMW (formerly POEA)"
-            description="Department of Migrant Workers – contracts, job orders, OFW services."
-            href="https://dmw.gov.ph"
-          />
-          <GovLinkCard
-            name="OWWA"
-            description="Welfare, programs, and assistance for OFWs & families."
-            href="https://owwa.gov.ph"
-          />
-          <GovLinkCard
-            name="SSS"
-            description="Social security, contributions, and loan information."
-            href="https://www.sss.gov.ph"
-          />
-          <GovLinkCard
-            name="PhilHealth"
-            description="Health insurance coverage and contributions."
-            href="https://www.philhealth.gov.ph"
-          />
-          <GovLinkCard
-            name="Pag-IBIG Fund"
-            description="Savings, housing loans, MP2 program, and contributions."
-            href="https://www.pagibigfund.gov.ph"
-          />
-          <GovLinkCard
-            name="DFA / PSA"
-            description="Passports, consular services (DFA) and civil registry docs (PSA)."
-            href="https://dfa.gov.ph"
-          />
-        </div>
-      </section>
+  <div className="grid gap-4 md:grid-cols-3">
+    {/* Card */}
+    {[
+      {
+        title: "DFA",
+        desc: "Passport services, appointments, renewals",
+        url: "https://www.dfa.gov.ph",
+        emoji: "🛂",
+      },
+      {
+        title: "POEA / DMW",
+        desc: "OFW verification, certificates, contracts",
+        url: "https://dmw.gov.ph",
+        emoji: "🧳",
+      },
+      {
+        title: "SSS",
+        desc: "Contributions, loans, benefits",
+        url: "https://www.sss.gov.ph",
+        emoji: "💼",
+      },
+      {
+        title: "Pag-IBIG",
+        desc: "Savings, MP2, loans, housing",
+        url: "https://www.pagibigfund.gov.ph",
+        emoji: "🏠",
+      },
+      {
+        title: "PhilHealth",
+        desc: "Health insurance, benefits, ID",
+        url: "https://www.philhealth.gov.ph",
+        emoji: "🩺",
+      },
+      {
+        title: "BIR",
+        desc: "TIN, online services, eBIR forms",
+        url: "https://www.bir.gov.ph",
+        emoji: "🧾",
+      },
+    ].map((item) => (
+      <a
+        key={item.title}
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group rounded-2xl border border-[var(--kh-border)]
+        bg-white/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]
+        p-5 transition-transform hover:-translate-y-1 
+        hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+      >
+        <div className="text-3xl mb-2">{item.emoji}</div>
+        <p className="text-sm font-semibold text-[var(--kh-text)]">
+          {item.title}
+        </p>
+        <p className="text-xs text-[var(--kh-text-muted)] mt-1">
+          {item.desc}
+        </p>
+      </a>
+    ))}
+  </div>
+</section>
+
+
+{/* ──────────────────────────────── */}
+{/* 🇸🇦 SAUDI GOVERNMENT LINKS */}
+{/* ──────────────────────────────── */}
+<section className="mt-12 space-y-4">
+  <h2 className="text-xl font-semibold text-[var(--kh-text)]">
+    🇸🇦 Saudi Government Services
+  </h2>
+
+  <div className="grid gap-4 md:grid-cols-3">
+    {[
+      {
+        title: "Absher",
+        desc: "Iqama, fines, visa services, renewals",
+        url: "https://www.absher.sa",
+        emoji: "🟢",
+      },
+      {
+        title: "MOFA",
+        desc: "Visa application, family visit visa",
+        url: "https://visa.mofa.gov.sa",
+        emoji: "📝",
+      },
+      {
+        title: "MUSANED",
+        desc: "Contracts & services for domestic workers",
+        url: "https://www.musaned.com.sa",
+        emoji: "🏡",
+      },
+      {
+        title: "Saudi Labor (MHRSD)",
+        desc: "Complaints, contracts, labor laws",
+        url: "https://www.mhrsd.gov.sa",
+        emoji: "⚖️",
+      },
+      {
+        title: "Saudi Post (SPL)",
+        desc: "Wasel address, parcels, deliveries",
+        url: "https://splonline.com.sa",
+        emoji: "📦",
+      },
+      {
+        title: "SEWA / Electricity",
+        desc: "Electricity & utilities inquiries",
+        url: "https://www.se.com.sa",
+        emoji: "💡",
+      },
+    ].map((item) => (
+      <a
+        key={item.title}
+        href={item.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group rounded-2xl border border-[var(--kh-border)]
+        bg-white/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]
+        p-5 transition-transform hover:-translate-y-1 
+        hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
+      >
+        <div className="text-3xl mb-2">{item.emoji}</div>
+        <p className="text-sm font-semibold text-[var(--kh-text)]">
+          {item.title}
+        </p>
+        <p className="text-xs text-[var(--kh-text-muted)] mt-1">
+          {item.desc}
+        </p>
+      </a>
+    ))}
+  </div>
+</section>
+
     </div>
   );
 }

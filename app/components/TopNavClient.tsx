@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "../../lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
+import logoImg from '../../public/logomain.png';
 
 type Theme = "dark" | "light";
 
@@ -52,7 +53,11 @@ export default function TopNavClient() {
         {/* Brand */}
         <Link href="/" className="flex items-center gap-3">
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[var(--kh-yellow)] text-xs font-black text-slate-900 shadow-[var(--kh-card-shadow)]">
-            KH
+            <img 
+            src={logoImg.src} 
+            alt="Kabayan Hub Logo" 
+            className="h-full w-full object-cover" 
+            />
           </div>
           <div className="leading-tight">
             <p className="text-sm font-semibold tracking-tight text-[var(--kh-text)]">
