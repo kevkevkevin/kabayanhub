@@ -282,142 +282,247 @@ export default function HomePage() {
       </section>
 
       {/* ──────────────────────────────── */}
-{/* 🇵🇭 PH GOVERNMENT LINKS */}
+{/* 🇵🇭 + 🇸🇦 GOV HELP DESK FOR KABAYANS */}
 {/* ──────────────────────────────── */}
-<section className="mt-10 space-y-4">
-  <h2 className="text-xl font-semibold text-[var(--kh-text)]">
-    🇵🇭 Philippine Government Services
-  </h2>
+<section className="mt-16 space-y-10">
+  {/* Header */}
+  <div className="relative overflow-hidden rounded-3xl border border-[var(--kh-border)] bg-white/80 px-4 py-5 shadow-[0_10px_40px_rgba(15,23,42,0.08)] md:px-8">
+    {/* soft flags in the back */}
+    <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-[#0038A8]/8 via-[#FCD116]/10 to-[#CE1126]/8 blur-2xl" />
+    <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-gradient-to-tr from-[#006C35]/10 via-[#FFFFFF]/5 to-[#006C35]/10 blur-2xl" />
 
-  <div className="grid gap-4 md:grid-cols-3">
-    {/* Card */}
-    {[
-      {
-        title: "DFA",
-        desc: "Passport services, appointments, renewals",
-        url: "https://www.dfa.gov.ph",
-        emoji: "🛂",
-      },
-      {
-        title: "POEA / DMW",
-        desc: "OFW verification, certificates, contracts",
-        url: "https://dmw.gov.ph",
-        emoji: "🧳",
-      },
-      {
-        title: "SSS",
-        desc: "Contributions, loans, benefits",
-        url: "https://www.sss.gov.ph",
-        emoji: "💼",
-      },
-      {
-        title: "Pag-IBIG",
-        desc: "Savings, MP2, loans, housing",
-        url: "https://www.pagibigfund.gov.ph",
-        emoji: "🏠",
-      },
-      {
-        title: "PhilHealth",
-        desc: "Health insurance, benefits, ID",
-        url: "https://www.philhealth.gov.ph",
-        emoji: "🩺",
-      },
-      {
-        title: "BIR",
-        desc: "TIN, online services, eBIR forms",
-        url: "https://www.bir.gov.ph",
-        emoji: "🧾",
-      },
-    ].map((item) => (
-      <a
-        key={item.title}
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group rounded-2xl border border-[var(--kh-border)]
-        bg-white/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]
-        p-5 transition-transform hover:-translate-y-1 
-        hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
-      >
-        <div className="text-3xl mb-2">{item.emoji}</div>
-        <p className="text-sm font-semibold text-[var(--kh-text)]">
-          {item.title}
+    <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-[10px] font-medium text-white px-3 py-1 shadow-sm">
+      <span className="text-xs">🛟</span>
+      <span>Gov help desk for Kabayans</span>
+    </div>
+
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
+          Official links for <span className="text-[var(--kh-blue)]">documents</span>,{" "}
+          <span className="text-[var(--kh-yellow)]">money</span>, and{" "}
+          <span className="text-[var(--kh-red)]">residency</span>.
+        </h2>
+        <p className="mt-1 text-xs md:text-sm text-slate-600">
+          Shortcut na — one place for PH & Saudi portals na madalas kailangan ng OFWs.
         </p>
-        <p className="text-xs text-[var(--kh-text-muted)] mt-1">
-          {item.desc}
-        </p>
-      </a>
-    ))}
+      </div>
+
+      <div className="flex flex-wrap gap-2 text-[10px] md:text-[11px]">
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+          📄 For documents
+        </span>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+          💸 For money & benefits
+        </span>
+        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
+          🪪 For residency / visas
+        </span>
+      </div>
+    </div>
   </div>
-</section>
 
+  {/* GRID: PH + SAUDI COLUMNS */}
+  <div className="grid gap-8 md:grid-cols-2">
+    {/* 🇵🇭 PH GOV LINKS */}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#0038A8] via-[#FCD116] to-[#CE1126] text-xs text-white shadow-md">
+            🇵🇭
+          </span>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Philippine government portals
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              For SSS, Pag-IBIG, PhilHealth, DMW / POEA, and more.
+            </p>
+          </div>
+        </div>
+        <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-semibold text-amber-800">
+          ⭐ Most used by OFWs
+        </span>
+      </div>
 
-{/* ──────────────────────────────── */}
-{/* 🇸🇦 SAUDI GOVERNMENT LINKS */}
-{/* ──────────────────────────────── */}
-<section className="mt-12 space-y-4">
-  <h2 className="text-xl font-semibold text-[var(--kh-text)]">
-    🇸🇦 Saudi Government Services
-  </h2>
+      <div className="grid gap-3 md:grid-cols-2">
+        {[
+          {
+            title: "DFA",
+            desc: "Passport appointments, renewals, travel advisories.",
+            url: "https://www.dfa.gov.ph",
+            tag: "Documents",
+            emoji: "🛂",
+          },
+          {
+            title: "DMW / POEA",
+            desc: "OFW services, contracts, OEC, job orders.",
+            url: "https://dmw.gov.ph",
+            tag: "OFW services",
+            emoji: "🧳",
+          },
+          {
+            title: "SSS",
+            desc: "Contributions, loans, benefits checker.",
+            url: "https://www.sss.gov.ph",
+            tag: "Money",
+            emoji: "💼",
+          },
+          {
+            title: "Pag-IBIG",
+            desc: "Savings, MP2, housing & cash loans.",
+            url: "https://www.pagibigfund.gov.ph",
+            tag: "Savings / loans",
+            emoji: "🏠",
+          },
+          {
+            title: "PhilHealth",
+            desc: "Health coverage, member info & benefits.",
+            url: "https://www.philhealth.gov.ph",
+            tag: "Health",
+            emoji: "🩺",
+          },
+          {
+            title: "BIR",
+            desc: "TIN, tax records & eBIR forms.",
+            url: "https://www.bir.gov.ph",
+            tag: "Tax",
+            emoji: "🧾",
+          },
+        ].map((item) => (
+          <a
+            key={item.title}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)]
+            transition-transform hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(15,23,42,0.12)]
+            hover:border-transparent hover:bg-gradient-to-br hover:from-slate-50 hover:via-white hover:to-amber-50"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900/90 text-lg text-white shadow-sm group-hover:scale-110 transition-transform">
+                {item.emoji}
+              </div>
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">
+                {item.tag}
+              </span>
+            </div>
+            <p className="mt-3 text-sm font-semibold text-slate-900">
+              {item.title}
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600 leading-snug">
+              {item.desc}
+            </p>
+            <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-[var(--kh-blue)] group-hover:text-slate-900">
+              Open site
+              <span className="translate-y-[1px] transition-transform group-hover:translate-x-0.5">
+                ↗
+              </span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
 
-  <div className="grid gap-4 md:grid-cols-3">
-    {[
-      {
-        title: "Absher",
-        desc: "Iqama, fines, visa services, renewals",
-        url: "https://www.absher.sa",
-        emoji: "🟢",
-      },
-      {
-        title: "MOFA",
-        desc: "Visa application, family visit visa",
-        url: "https://visa.mofa.gov.sa",
-        emoji: "📝",
-      },
-      {
-        title: "MUSANED",
-        desc: "Contracts & services for domestic workers",
-        url: "https://www.musaned.com.sa",
-        emoji: "🏡",
-      },
-      {
-        title: "Saudi Labor (MHRSD)",
-        desc: "Complaints, contracts, labor laws",
-        url: "https://www.mhrsd.gov.sa",
-        emoji: "⚖️",
-      },
-      {
-        title: "Saudi Post (SPL)",
-        desc: "Wasel address, parcels, deliveries",
-        url: "https://splonline.com.sa",
-        emoji: "📦",
-      },
-      {
-        title: "SEWA / Electricity",
-        desc: "Electricity & utilities inquiries",
-        url: "https://www.se.com.sa",
-        emoji: "💡",
-      },
-    ].map((item) => (
-      <a
-        key={item.title}
-        href={item.url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="group rounded-2xl border border-[var(--kh-border)]
-        bg-white/70 backdrop-blur-xl shadow-[0_4px_20px_rgba(0,0,0,0.05)]
-        p-5 transition-transform hover:-translate-y-1 
-        hover:shadow-[0_8px_30px_rgba(0,0,0,0.08)]"
-      >
-        <div className="text-3xl mb-2">{item.emoji}</div>
-        <p className="text-sm font-semibold text-[var(--kh-text)]">
-          {item.title}
-        </p>
-        <p className="text-xs text-[var(--kh-text-muted)] mt-1">
-          {item.desc}
-        </p>
-      </a>
-    ))}
+    {/* 🇸🇦 SAUDI GOV LINKS */}
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#006C35] via-white to-[#006C35] text-xs text-emerald-900 shadow-md">
+            🇸🇦
+          </span>
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">
+              Saudi government portals
+            </h3>
+            <p className="text-[11px] text-slate-500">
+              For Iqama, visas, labor concerns, addresses, and deliveries.
+            </p>
+          </div>
+        </div>
+        <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-700">
+          🪪 For Iqama & residency
+        </span>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {[
+          {
+            title: "Absher",
+            desc: "Iqama, traffic fines, exit/re-entry, family members.",
+            url: "https://www.absher.sa",
+            tag: "Residency",
+            emoji: "🟢",
+          },
+          {
+            title: "MOFA Visa",
+            desc: "Family visit visa, status tracking, approvals.",
+            url: "https://visa.mofa.gov.sa",
+            tag: "Visas",
+            emoji: "📝",
+          },
+          {
+            title: "MUSANED",
+            desc: "Domestic worker contracts, complaints, info.",
+            url: "https://www.musaned.com.sa",
+            tag: "Household",
+            emoji: "🏡",
+          },
+          {
+            title: "MHRSD (Labor)",
+            desc: "Labor laws, complaints, work disputes.",
+            url: "https://www.mhrsd.gov.sa",
+            tag: "Labor",
+            emoji: "⚖️",
+          },
+          {
+            title: "Saudi Post (SPL)",
+            desc: "Wasel address, parcels, delivery tracking.",
+            url: "https://splonline.com.sa",
+            tag: "Deliveries",
+            emoji: "📦",
+          },
+          {
+            title: "Saudi Electricity",
+            desc: "Bills, account info, e-services.",
+            url: "https://www.se.com.sa",
+            tag: "Utilities",
+            emoji: "💡",
+          },
+        ].map((item) => (
+          <a
+            key={item.title}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group flex flex-col rounded-2xl border border-emerald-100 bg-white/80 p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)]
+            transition-transform hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(15,23,42,0.12)]
+            hover:border-transparent hover:bg-gradient-to-br hover:from-emerald-50 hover:via-white hover:to-emerald-50"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-lg text-white shadow-sm group-hover:scale-110 transition-transform">
+                {item.emoji}
+              </div>
+              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700">
+                {item.tag}
+              </span>
+            </div>
+            <p className="mt-3 text-sm font-semibold text-slate-900">
+              {item.title}
+            </p>
+            <p className="mt-1 text-[11px] text-slate-600 leading-snug">
+              {item.desc}
+            </p>
+            <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 group-hover:text-slate-900">
+              Open site
+              <span className="translate-y-[1px] transition-transform group-hover:translate-x-0.5">
+                ↗
+              </span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </div>
   </div>
 </section>
 
