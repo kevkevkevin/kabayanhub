@@ -91,6 +91,15 @@ export default function TopNavClient() {
           >
             Learn &amp; Tutorials
           </Link>
+          
+            
+            <Link
+                href="/arabic-quiz"
+                className="text-xs md:text-sm text-[var(--kh-text-secondary)] hover:text-[var(--kh-text)]"
+            >
+                🟢 Arabic Quiz
+            </Link>
+
           <Link
             href="/marketplace"
             className="rounded-full px-3 py-1 text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
@@ -175,6 +184,16 @@ export default function TopNavClient() {
               >
                 Learn &amp; Tutorials
               </Link>
+            
+            <Link
+                href="/arabic-quiz"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+                >
+                🟢 Arabic Quiz
+                </Link>
+
+
               <Link
                 href="/marketplace"
                 onClick={() => setIsMobileMenuOpen(false)}

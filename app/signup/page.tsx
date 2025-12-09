@@ -4,14 +4,15 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth } from "../../lib/firebase";
-import { db } from "../../lib/firebase";
+import { auth, db } from "../../lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
 
 export default function SignupPage() {
   const router = useRouter();
+
   const [displayName, setDisplayName] = useState("");
+  const [signupUsername, setSignupUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -22,25 +23,42 @@ export default function SignupPage() {
     e.preventDefault();
     setError(null);
 
+    if (!signupUsername.trim()) {
+      setError("Please choose a username.");
+      return;
+    }
+
     if (!email || !password) {
       setError("Please enter your email and password.");
       return;
     }
 
+    if (signupUsername.includes(" ")) {
+      setError("Username cannot contain spaces.");
+      return;
+    }
+
     setLoading(true);
     try {
+      // Create auth user
       const cred = await createUserWithEmailAndPassword(auth, email, password);
 
-      if (displayName) {
-        await updateProfile(cred.user, { displayName });
-      }
+      const finalDisplayName =
+        signupUsername || displayName || email.split("@")[0];
 
-      // Create user doc
+      // Update Firebase Auth profile (optional but nice)
+      await updateProfile(cred.user, {
+        displayName: finalDisplayName,
+      });
+
+      // Create Firestore user doc
       const userRef = doc(db, "users", cred.user.uid);
       await setDoc(userRef, {
         email,
-        displayName: displayName || email,
+        username: signupUsername,
+        displayName: finalDisplayName,
         points: 0,
+        role: "user",
         createdAt: serverTimestamp(),
         lastVisit: serverTimestamp(),
       });
@@ -51,6 +69,8 @@ export default function SignupPage() {
       let msg = "Failed to sign up. Please try again.";
       if (err?.code === "auth/email-already-in-use") {
         msg = "This email is already registered. Try logging in instead.";
+      } else if (err?.code === "auth/weak-password") {
+        msg = "Password is too weak. Please use at least 6 characters.";
       }
       setError(msg);
     } finally {
@@ -81,6 +101,7 @@ export default function SignupPage() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-sm">
+          {/* Name (optional) */}
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Name (optional)
@@ -94,6 +115,28 @@ export default function SignupPage() {
             />
           </div>
 
+          {/* Username */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+              Username
+            </label>
+            <input
+              type="text"
+              required
+              minLength={3}
+              maxLength={20}
+              placeholder="e.g. kabayan123"
+              className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
+              value={signupUsername}
+              onChange={(e) => setSignupUsername(e.target.value.trim())}
+            />
+            <p className="text-[10px] text-[var(--kh-text-muted)]">
+              This will show on the leaderboard and dashboard. No spaces, keep
+              it wholesome 😊
+            </p>
+          </div>
+
+          {/* Email */}
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Email
@@ -105,9 +148,11 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               autoComplete="email"
+              required
             />
           </div>
 
+          {/* Password */}
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Password
@@ -119,6 +164,7 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               autoComplete="new-password"
+              required
             />
           </div>
 

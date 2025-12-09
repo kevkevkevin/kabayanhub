@@ -40,13 +40,13 @@ type LeaderEntry = {
   points: number;
 };
 
-type PurchaseItem = {
+type RedeemedItem = {
   id: string;
+  itemId: string;
   itemTitle: string;
-  price: number;
-  status?: "pending" | "redeemed";
+  price?: number | null;
+  status?: string | null; // "pending" | "redeemed" | etc.
   createdAt?: any;
-  redeemedAt?: any;
 };
 
 const RANKS: RankInfo[] = [
@@ -127,21 +127,18 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   const [displayName, setDisplayName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
   const [points, setPoints] = useState<number>(0);
   const [lastVisit, setLastVisit] = useState<Date | null>(null);
   const [lastDailyCheckin, setLastDailyCheckin] = useState<Date | null>(null);
-  const [streak, setStreak] = useState<number>(0);
-
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
-  const [purchases, setPurchases] = useState<PurchaseItem[]>([]);
-  const [loadingPurchases, setLoadingPurchases] = useState(false);
+  const [redeemedItems, setRedeemedItems] = useState<RedeemedItem[]>([]);
 
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [checkinLoading, setCheckinLoading] = useState(false);
 
-  // ---------- LOAD USER + DASHBOARD DATA ----------
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) {
@@ -150,23 +147,23 @@ export default function DashboardPage() {
       }
 
       setUser(u);
-      setLoading(true);
-      setError(null);
 
       try {
-        // 1) user profile
         const userRef = doc(db, "users", u.uid);
         const snap = await getDoc(userRef);
 
         if (!snap.exists()) {
           setDisplayName(u.email ?? "Kabayan");
+          setEmail(u.email || "");
           setPoints(0);
           setLastVisit(null);
           setLastDailyCheckin(null);
-          setStreak(0);
         } else {
           const data = snap.data() as any;
-          setDisplayName(data.displayName || u.email || "Kabayan");
+          setDisplayName(
+            data.username || data.displayName || u.email || "Kabayan"
+          );
+          setEmail(data.email || u.email || "");
           setPoints(data.points ?? 0);
           setLastVisit(
             data.lastVisit && data.lastVisit.toDate
@@ -178,10 +175,9 @@ export default function DashboardPage() {
               ? data.lastDailyCheckin.toDate()
               : null
           );
-          setStreak(data.dailyStreak ?? 0);
         }
 
-        // 2) recent activity
+        // Recent activity
         const actRef = collection(db, "users", u.uid, "activity");
         const actQ = query(actRef, orderBy("createdAt", "desc"), limit(10));
         const actSnap = await getDocs(actQ);
@@ -198,7 +194,7 @@ export default function DashboardPage() {
         });
         setActivity(items);
 
-        // 3) leaderboard
+        // Leaderboard (top 10)
         const usersRef = collection(db, "users");
         const lbQ = query(usersRef, orderBy("points", "desc"), limit(10));
         const lbSnap = await getDocs(lbQ);
@@ -208,42 +204,40 @@ export default function DashboardPage() {
           const d = docSnap.data() as any;
           lb.push({
             id: docSnap.id,
-            name: d.displayName || d.email || "Kabayan",
+            name: d.username || d.displayName || d.email || "Kabayan",
             points: d.points ?? 0,
           });
         });
         setLeaderboard(lb);
 
-        // 4) purchases for this user
-        setLoadingPurchases(true);
-        const purRef = collection(db, "marketplacePurchases");
-        const purQ = query(
-          purRef,
+        // My redeemed marketplace items
+        const purchasesRef = collection(db, "marketplacePurchases");
+        const purchasesQ = query(
+          purchasesRef,
           where("userId", "==", u.uid),
           orderBy("createdAt", "desc"),
-          limit(20)
+          limit(15)
         );
-        const purSnap = await getDocs(purQ);
+        const purchasesSnap = await getDocs(purchasesQ);
 
-        const purList: PurchaseItem[] = [];
-        purSnap.forEach((docSnap) => {
+        const redeemed: RedeemedItem[] = [];
+        purchasesSnap.forEach((docSnap) => {
           const d = docSnap.data() as any;
-          purList.push({
+          redeemed.push({
             id: docSnap.id,
-            itemTitle: d.itemTitle,
-            price: d.price ?? 0,
-            status: d.status ?? "pending",
-            createdAt: d.createdAt ?? null,
-            redeemedAt: d.redeemedAt ?? null,
+            itemId: d.itemId,
+            itemTitle: d.itemTitle || "Unknown item",
+            price: d.price ?? null,
+            status: d.status || "pending",
+            createdAt: d.createdAt,
           });
         });
-        setPurchases(purList);
+        setRedeemedItems(redeemed);
       } catch (err) {
         console.error("Failed to load dashboard:", err);
         setError("Failed to load your Kabayan stats. Please refresh.");
       } finally {
         setLoading(false);
-        setLoadingPurchases(false);
       }
     });
 
@@ -288,25 +282,13 @@ export default function DashboardPage() {
 
       const data = snap.data() as any;
       const currentPoints = data.points ?? 0;
-
-      // streak logic (simple: if last checkin was yesterday -> +1, else 1)
       const now = new Date();
-      let newStreak = 1;
-      if (data.lastDailyCheckin && data.lastDailyCheckin.toDate) {
-        const last = data.lastDailyCheckin.toDate() as Date;
-        const yesterday = new Date();
-        yesterday.setDate(yesterday.getDate() - 1);
-        if (isSameDay(last, yesterday)) {
-          newStreak = (data.dailyStreak ?? 0) + 1;
-        }
-      }
 
       await Promise.all([
         updateDoc(userRef, {
           points: increment(DAILY_CHECKIN_POINTS),
           lastVisit: serverTimestamp(),
           lastDailyCheckin: serverTimestamp(),
-          dailyStreak: newStreak,
         }),
         addDoc(collection(db, "users", user.uid, "activity"), {
           type: "daily_checkin",
@@ -317,11 +299,9 @@ export default function DashboardPage() {
 
       setPoints(currentPoints + DAILY_CHECKIN_POINTS);
       setLastDailyCheckin(now);
-      setStreak(newStreak);
-      setStatus(
-        `+${DAILY_CHECKIN_POINTS} KP from your daily Kabayan check-in! 🎉`
-      );
+      setStatus(`+${DAILY_CHECKIN_POINTS} KP from your daily Kabayan check-in! 🎉`);
 
+      // Optimistically prepend activity
       setActivity((prev) => [
         {
           id: `local-checkin-${Date.now()}`,
@@ -341,35 +321,26 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      <header className="space-y-2">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h1 className="text-2xl font-semibold text-[var(--kh-text)]">
-              Hey,{" "}
-              <span className="text-[var(--kh-yellow)]">{displayName}</span>
-            </h1>
-            <p className="text-sm text-[var(--kh-text-secondary)]">
-              This is your Kabayan Hub profile. Check your rank, points, and
-              recent activity. Tuloy lang sa pag-ipon ng Kabayan Points. 🇵🇭
-            </p>
-          </div>
-
-          {/* tiny KP coin confetti */}
-          <div className="hidden flex-col items-end gap-1 text-[10px] text-[var(--kh-text-muted)] md:flex">
-            <div className="relative h-8 w-16">
-              <span className="absolute left-1 top-0 inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--kh-yellow)] text-[9px] font-bold text-slate-900 shadow">
-                KP
-              </span>
-              <span className="absolute right-0 top-3 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--kh-blue-soft)] text-[8px] font-semibold text-[var(--kh-blue)]">
-                +5
-              </span>
-              <span className="absolute left-6 bottom-0 inline-flex h-4 w-4 items-center justify-center rounded-full bg-[var(--kh-red-soft)] text-[8px] font-semibold text-[var(--kh-red)]">
-                +15
-              </span>
-            </div>
-            <span>Consistent ka ba? Check your streak below.</span>
-          </div>
-        </div>
+      {/* Header */}
+      <header className="space-y-1.5">
+        <h1 className="text-2xl font-semibold text-[var(--kh-text)]">
+          Hey,{" "}
+          <span className="text-[var(--kh-yellow)]">
+            {displayName || "Kabayan"}
+          </span>
+        </h1>
+        {email && (
+          <p className="text-[11px] text-[var(--kh-text-muted)]">
+            Signed in as{" "}
+            <span className="font-medium text-[var(--kh-text-secondary)]">
+              {email}
+            </span>
+          </p>
+        )}
+        <p className="text-sm text-[var(--kh-text-secondary)]">
+          This is your Kabayan Hub profile. Check your rank, points, and recent
+          activity. Tuloy lang sa pag-ipon ng Kabayan Points. 🇵🇭
+        </p>
       </header>
 
       {status && (
@@ -387,8 +358,15 @@ export default function DashboardPage() {
       {/* Top summary row */}
       <section className="grid gap-4 md:grid-cols-[2fr,1.3fr]">
         {/* Rank + progress */}
-        <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
-          <div className="flex items-center justify-between gap-3">
+        <div className="relative rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)] overflow-hidden">
+          {/* Tiny KP coin confetti */}
+          <div className="pointer-events-none absolute -top-3 right-6 flex gap-1 text-[11px] opacity-60">
+            <span>🪙</span>
+            <span>🪙</span>
+            <span>🪙</span>
+          </div>
+
+          <div className="flex items-center justify-between gap-3 relative">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--kh-text-muted)]">
                 Kabayan Rank
@@ -450,27 +428,20 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Quick tips + daily check-in stacked */}
+        {/* Daily check-in + tips */}
         <div className="grid gap-3 md:grid-rows-2">
-          {/* Daily check-in card */}
+          {/* Daily check-in card with streak hint */}
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-900">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide">
-                  Daily Kabayan check-in
-                </p>
-                <p className="mt-1">
-                  Hit this once a day para may guaranteed{" "}
-                  <span className="font-semibold">
-                    +{DAILY_CHECKIN_POINTS} Kabayan Points
-                  </span>{" "}
-                  kahit busy ka.
-                </p>
-              </div>
-              <div className="rounded-full bg-emerald-600 px-3 py-1 text-[10px] font-semibold text-emerald-50">
-                Streak: {streak} day{streak === 1 ? "" : "s"}
-              </div>
-            </div>
+            <p className="text-[11px] font-semibold uppercase tracking-wide">
+              Daily Kabayan check-in
+            </p>
+            <p className="mt-1">
+              Hit this once a day para may guaranteed{" "}
+              <span className="font-semibold">
+                +{DAILY_CHECKIN_POINTS} Kabayan Points
+              </span>{" "}
+              kahit busy ka.
+            </p>
             {lastDailyCheckin && (
               <p className="mt-1 text-[10px] text-emerald-800">
                 Last check-in:{" "}
@@ -481,6 +452,15 @@ export default function DashboardPage() {
                 })}
               </p>
             )}
+
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-emerald-800">
+              <span>🔥</span>
+              <span>
+                Tip: do check-in + 1 news + 1 tutorial daily para may mini
+                &quot;streak&quot; routine ka.
+              </span>
+            </div>
+
             <button
               onClick={handleDailyCheckin}
               disabled={checkinLoading || hasCheckedInToday}
@@ -502,7 +482,7 @@ export default function DashboardPage() {
               </p>
               <p className="mt-1">
                 1) Daily check-in. 2) Read at least one news. 3) Watch one
-                tutorial. Small steps, malaking ipon over time.
+                tutorial or do the Arabic quiz.
               </p>
             </div>
             <div className="rounded-2xl border border-yellow-100 bg-[var(--kh-yellow-soft)] px-4 py-3 text-xs text-[var(--kh-text)]">
@@ -510,92 +490,148 @@ export default function DashboardPage() {
                 Pro tip
               </p>
               <p className="mt-1">
-                Share articles &amp; tutorials with friends. It&apos;s an easy
-                way to stack extra KP while helping other Kabayans.
+                Share articles &amp; tutorials with friends. Easy extra KP while
+                helping other Kabayans.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Redeemed items + leaderboard side by side */}
+      {/* Recent activity (full width) */}
+      <section className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
+        <div className="flex items-center justify-between gap-2">
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--kh-text)]">
+              Recent Kabayan activity
+            </h2>
+            <p className="text-[11px] text-[var(--kh-text-muted)]">
+              The last things you did that earned (or spent) Kabayan Points.
+            </p>
+          </div>
+          <span className="hidden rounded-full bg-[var(--kh-bg-subtle)] px-3 py-1 text-[10px] text-[var(--kh-text-muted)] md:inline-flex">
+            Showing last {activity.length} actions
+          </span>
+        </div>
+
+        {activity.length === 0 && (
+          <p className="mt-3 text-xs text-[var(--kh-text-secondary)]">
+            Walang activity pa. Try visiting the news, tutorials, mini-games, or
+            doing a daily check-in to start earning KP.
+          </p>
+        )}
+
+        {activity.length > 0 && (
+          <div className="mt-3 space-y-2 text-xs">
+            {activity.map((a) => {
+              const created =
+                a.createdAt && (a.createdAt as any).toDate
+                  ? (a.createdAt as any).toDate()
+                  : null;
+
+              return (
+                <div
+                  key={a.id}
+                  className="flex items-center justify-between rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-2"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium text-[var(--kh-text)]">
+                      {formatActivityType(a.type)}
+                    </span>
+                    {created && (
+                      <span className="text-[10px] text-[var(--kh-text-muted)]">
+                        {created.toLocaleDateString()}{" "}
+                        {created.toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-right">
+                    <span
+                      className={`text-[11px] font-semibold ${
+                        a.amount >= 0 ? "text-emerald-600" : "text-red-500"
+                      }`}
+                    >
+                      {a.amount >= 0 ? "+" : ""}
+                      {a.amount} KP
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Bottom row: My redeemed items + leaderboard */}
       <section className="grid gap-4 md:grid-cols-2">
         {/* My redeemed items */}
         <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-semibold text-[var(--kh-text)]">
-                Your redeemed items
-              </h2>
-              <p className="text-[11px] text-[var(--kh-text-muted)]">
-                A quick list of what you&apos;ve claimed from the Kabayan
-                marketplace.
-              </p>
-            </div>
-            {purchases.length > 0 && (
-              <span className="rounded-full bg-[var(--kh-yellow-soft)] px-3 py-1 text-[10px] font-semibold text-[var(--kh-text)]">
-                {purchases.length} item{purchases.length > 1 ? "s" : ""}
-              </span>
-            )}
-          </div>
+          <h2 className="text-sm font-semibold text-[var(--kh-text)]">
+            My redeemed items
+          </h2>
+          <p className="text-[11px] text-[var(--kh-text-muted)]">
+            Items you redeemed from the Kabayan Marketplace. Status updates are
+            managed by the admin.
+          </p>
 
-          {loadingPurchases && (
-            <p className="text-[11px] text-[var(--kh-text-muted)]">
-              Loading your redemptions…
+          {redeemedItems.length === 0 && (
+            <p className="mt-3 text-xs text-[var(--kh-text-secondary)]">
+              Wala ka pang na-redeem. Check the marketplace and try claiming a
+              reward using your Kabayan Points.
             </p>
           )}
 
-          {!loadingPurchases && purchases.length === 0 && (
-            <p className="text-xs text-[var(--kh-text-secondary)]">
-              You haven&apos;t redeemed anything yet. Visit the marketplace to
-              use your Kabayan Points.
-            </p>
-          )}
-
-          {!loadingPurchases && purchases.length > 0 && (
-            <ul className="mt-2 space-y-2 text-xs">
-              {purchases.map((p) => {
-                let dateText = "";
-                if (p.createdAt && p.createdAt.toDate) {
-                  const d = p.createdAt.toDate() as Date;
-                  dateText =
-                    d.toLocaleDateString() +
-                    " · " +
-                    d.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    });
+          {redeemedItems.length > 0 && (
+            <div className="mt-3 space-y-2 text-xs">
+              {redeemedItems.map((item) => {
+                let created: Date | null = null;
+                if (item.createdAt && item.createdAt.toDate) {
+                  created = item.createdAt.toDate();
                 }
 
-                const isRedeemed = p.status === "redeemed";
+                const statusLabel = (item.status || "pending").toLowerCase();
+                const isDone =
+                  statusLabel === "redeemed" || statusLabel === "completed";
 
                 return (
-                  <li
-                    key={p.id}
+                  <div
+                    key={item.id}
                     className="flex items-center justify-between rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-2"
                   >
-                    <div>
+                    <div className="flex-1 pr-2">
                       <p className="text-[11px] font-medium text-[var(--kh-text)]">
-                        {p.itemTitle}
+                        {item.itemTitle}
                       </p>
                       <p className="text-[10px] text-[var(--kh-text-muted)]">
-                        Spent {p.price ?? "?"} KP
-                        {dateText ? " · " + dateText : ""}
+                        {item.price != null ? `${item.price} KP` : "—"}{" "}
+                        {created && (
+                          <>
+                            {" · "}
+                            {created.toLocaleDateString()}{" "}
+                            {created.toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </>
+                        )}
                       </p>
                     </div>
                     <span
-                      className={`ml-3 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                        isRedeemed
+                      className={`rounded-full px-3 py-1 text-[10px] font-semibold ${
+                        isDone
                           ? "bg-emerald-100 text-emerald-700"
                           : "bg-amber-100 text-amber-700"
                       }`}
                     >
-                      {isRedeemed ? "Redeemed" : "Pending"}
+                      {isDone ? "Redeemed" : "Pending"}
                     </span>
-                  </li>
+                  </div>
                 );
               })}
-            </ul>
+            </div>
           )}
         </div>
 
@@ -671,73 +707,6 @@ export default function DashboardPage() {
             </div>
           )}
         </div>
-      </section>
-
-      {/* Recent activity – full width at the bottom */}
-      <section className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--kh-text)]">
-              Recent Kabayan activity
-            </h2>
-            <p className="text-[11px] text-[var(--kh-text-muted)]">
-              The last things you did that earned (or spent) Kabayan Points.
-            </p>
-          </div>
-          <span className="hidden rounded-full bg-[var(--kh-bg-subtle)] px-3 py-1 text-[10px] text-[var(--kh-text-muted)] md:inline-flex">
-            Showing last {activity.length} actions
-          </span>
-        </div>
-
-        {activity.length === 0 && (
-          <p className="mt-3 text-xs text-[var(--kh-text-secondary)]">
-            Walang activity pa. Try visiting the news, tutorials, or doing a
-            daily check-in to start earning KP.
-          </p>
-        )}
-
-        {activity.length > 0 && (
-          <div className="mt-3 space-y-2 text-xs">
-            {activity.map((a) => {
-              const created =
-                a.createdAt && (a.createdAt as any).toDate
-                  ? (a.createdAt as any).toDate()
-                  : null;
-
-              return (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-2"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium text-[var(--kh-text)]">
-                      {formatActivityType(a.type)}
-                    </span>
-                    {created && (
-                      <span className="text-[10px] text-[var(--kh-text-muted)]">
-                        {created.toLocaleDateString()}{" "}
-                        {created.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`text-[11px] font-semibold ${
-                        a.amount >= 0 ? "text-emerald-600" : "text-red-500"
-                      }`}
-                    >
-                      {a.amount >= 0 ? "+" : ""}
-                      {a.amount} KP
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
       </section>
     </div>
   );
