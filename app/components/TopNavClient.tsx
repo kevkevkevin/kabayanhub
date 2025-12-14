@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { auth } from "../../lib/firebase";
 import { onAuthStateChanged, signOut, User } from "firebase/auth";
-import logoImg from '../../public/logomain.png';
+import logoImg from "../../public/logomain.png";
 
 type Theme = "dark" | "light";
 
@@ -13,9 +13,12 @@ export default function TopNavClient() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
-  
-  // New State for Mobile Menu
+
+  // Mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // New: mobile collapsible Learn menu
+  const [isLearnOpenMobile, setIsLearnOpenMobile] = useState(false);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -25,8 +28,7 @@ export default function TopNavClient() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const saved = window.localStorage.getItem("kh-theme") as Theme | null;
-    const initial: Theme =
-      saved === "light" || saved === "dark" ? saved : "light";
+    const initial: Theme = saved === "light" || saved === "dark" ? saved : "light";
     applyTheme(initial);
     setTheme(initial);
   }, []);
@@ -47,24 +49,30 @@ export default function TopNavClient() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    setIsMobileMenuOpen(false); // Close menu on logout
+    setIsMobileMenuOpen(false);
+    setIsLearnOpenMobile(false);
     router.push("/");
+  };
+
+  const closeMobileMenus = () => {
+    setIsMobileMenuOpen(false);
+    setIsLearnOpenMobile(false);
   };
 
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--kh-border)] bg-[var(--kh-bg-card)]/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:py-4">
         {/* Brand */}
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="flex items-center gap-3 z-50"
-          onClick={() => setIsMobileMenuOpen(false)}
+          onClick={closeMobileMenus}
         >
           <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[var(--kh-yellow)] text-xs font-black text-slate-900 shadow-[var(--kh-card-shadow)]">
-            <img 
-              src={logoImg.src} 
-              alt="Kabayan Hub Logo" 
-              className="h-full w-full object-cover rounded-2xl" 
+            <img
+              src={logoImg.src}
+              alt="Kabayan Hub Logo"
+              className="h-full w-full object-cover rounded-2xl"
             />
           </div>
           <div className="leading-tight">
@@ -77,7 +85,7 @@ export default function TopNavClient() {
           </div>
         </Link>
 
-        {/* --- DESKTOP NAV (Hidden on Mobile) --- */}
+        {/* --- DESKTOP NAV --- */}
         <nav className="hidden md:flex items-center gap-2 text-xs md:text-sm">
           <Link
             href="/news"
@@ -85,28 +93,43 @@ export default function TopNavClient() {
           >
             News &amp; Updates
           </Link>
-          <Link
-            href="/videos"
-            className="rounded-full px-3 py-1 text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-          >
-            Learn &amp; Tutorials
-          </Link>
-          
-            
-            <Link
-                href="/arabic-quiz"
-                className="text-xs md:text-sm text-[var(--kh-text-secondary)] hover:text-[var(--kh-text)]"
-            >
-                🟢 Arabic Quiz
-            </Link>
 
-                      <Link
+          {/* ✅ Learn & Tutorials dropdown (NO LINK) */}
+          <div className="relative group">
+            <button
+              type="button"
+              className="rounded-full px-3 py-1 text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition inline-flex items-center gap-1"
+            >
+              Learn &amp; Tutorials
+              <span className="text-[10px] opacity-70">▾</span>
+            </button>
+
+            {/* Dropdown panel */}
+            <div className="absolute left-0 top-[calc(100%+1px)] hidden min-w-[210px] rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-[var(--kh-card-shadow)] group-hover:block">
+              <div className="p-2">
+                <Link
+                  href="/videos"
+                  className="block rounded-xl px-3 py-2 text-xs text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
+                >
+                  🎥 Videos
+                </Link>
+
+                <Link
+                  href="/arabic-quiz"
+                  className="block rounded-xl px-3 py-2 text-xs text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
+                >
+                  🟢 Learn Arabic
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <Link
             href="/budget"
             className="rounded-full px-3 py-1 text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
           >
             Budget Tracker
           </Link>
-
 
           <Link
             href="/marketplace"
@@ -114,6 +137,7 @@ export default function TopNavClient() {
           >
             Marketplace
           </Link>
+
           <Link
             href="/dashboard"
             className="rounded-full bg-[var(--kh-yellow)] px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-[var(--kh-card-shadow)] hover:bg-[#ffe56f] transition"
@@ -148,104 +172,142 @@ export default function TopNavClient() {
           )}
         </nav>
 
-        {/* --- MOBILE ACTIONS (Visible only on Mobile) --- */}
+        {/* --- MOBILE ACTIONS --- */}
         <div className="flex items-center gap-2 md:hidden">
-            {/* Mobile Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] text-[13px] text-[var(--kh-text-secondary)] transition"
-            >
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] text-[13px] text-[var(--kh-text-secondary)] transition"
+          >
+            {theme === "dark" ? "☀️" : "🌙"}
+          </button>
 
-            {/* Hamburger Button */}
-            <button
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--kh-border)] text-[var(--kh-text)] hover:bg-[var(--kh-bg-subtle)] transition"
-            >
-               {isMobileMenuOpen ? (
-                // Close Icon
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>
-              ) : (
-                // Menu Icon
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
-              )}
-            </button>
+          {/* Hamburger */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--kh-border)] text-[var(--kh-text)] hover:bg-[var(--kh-bg-subtle)] transition"
+          >
+            {isMobileMenuOpen ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 18 18" />
+              </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="4" x2="20" y1="12" y2="12" />
+                <line x1="4" x2="20" y1="6" y2="6" />
+                <line x1="4" x2="20" y1="18" y2="18" />
+              </svg>
+            )}
+          </button>
         </div>
       </div>
 
-      {/* --- MOBILE MENU DROPDOWN --- */}
+      {/* --- MOBILE MENU --- */}
       {isMobileMenuOpen && (
         <div className="md:hidden border-t border-[var(--kh-border)] bg-[var(--kh-bg-card)] px-4 py-4 shadow-xl">
-           <nav className="flex flex-col space-y-3">
-              <Link
-                href="/news"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-              >
-                News &amp; Updates
-              </Link>
-              <Link
-                href="/videos"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-              >
-                Learn &amp; Tutorials
-              </Link>
-            
+          <nav className="flex flex-col space-y-3">
             <Link
-                href="/arabic-quiz"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-                >
-                🟢 Arabic Quiz
-                </Link>
+              href="/news"
+              onClick={closeMobileMenus}
+              className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+            >
+              News &amp; Updates
+            </Link>
 
-                              <Link
-                href="/budget"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-              >
-                Budget Tracker
-              </Link>
+            {/* ✅ Mobile collapsible Learn menu */}
+            <button
+              type="button"
+              onClick={() => setIsLearnOpenMobile((v) => !v)}
+              className="flex items-center justify-between rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+            >
+              <span>Learn &amp; Tutorials</span>
+              <span className="text-xs opacity-70">{isLearnOpenMobile ? "▲" : "▼"}</span>
+            </button>
 
-
-
-              <Link
-                href="/marketplace"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-              >
-                Marketplace
-              </Link>
-              
-              <div className="my-2 border-t border-[var(--kh-border)]"></div>
-
-              <Link
-                href="/dashboard"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full text-center rounded-md bg-[var(--kh-yellow)] px-3 py-2 text-sm font-bold text-slate-900 shadow-sm hover:bg-[#ffe56f]"
-              >
-                My Kabayan Stats
-              </Link>
-
-              {user ? (
-                <button
-                  onClick={handleLogout}
-                  className="block w-full rounded-md border border-red-200 px-3 py-2 text-center text-sm font-medium text-red-600 hover:bg-red-50"
-                >
-                  Logout
-                </button>
-              ) : (
+            {isLearnOpenMobile && (
+              <div className="ml-2 space-y-2 rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-2">
                 <Link
-                  href="/login"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="block w-full rounded-md border border-[var(--kh-border)] px-3 py-2 text-center text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+                  href="/videos"
+                  onClick={closeMobileMenus}
+                  className="block rounded-md px-3 py-2 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-card)] hover:text-[var(--kh-text)]"
                 >
-                  Login / Signup
+                  🎥 Videos
                 </Link>
-              )}
-           </nav>
+
+                <Link
+                  href="/arabic-quiz"
+                  onClick={closeMobileMenus}
+                  className="block rounded-md px-3 py-2 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-card)] hover:text-[var(--kh-text)]"
+                >
+                  🟢 Learn Arabic
+                </Link>
+              </div>
+            )}
+
+            <Link
+              href="/budget"
+              onClick={closeMobileMenus}
+              className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+            >
+              Budget Tracker
+            </Link>
+
+            <Link
+              href="/marketplace"
+              onClick={closeMobileMenus}
+              className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+            >
+              Marketplace
+            </Link>
+
+            <div className="my-2 border-t border-[var(--kh-border)]"></div>
+
+            <Link
+              href="/dashboard"
+              onClick={closeMobileMenus}
+              className="block w-full text-center rounded-md bg-[var(--kh-yellow)] px-3 py-2 text-sm font-bold text-slate-900 shadow-sm hover:bg-[#ffe56f]"
+            >
+              My Kabayan Stats
+            </Link>
+
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="block w-full rounded-md border border-red-200 px-3 py-2 text-center text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/login"
+                onClick={closeMobileMenus}
+                className="block w-full rounded-md border border-[var(--kh-border)] px-3 py-2 text-center text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+              >
+                Login / Signup
+              </Link>
+            )}
+          </nav>
         </div>
       )}
     </header>
