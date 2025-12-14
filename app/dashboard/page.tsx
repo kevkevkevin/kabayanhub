@@ -1,4 +1,3 @@
-// app/dashboard/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -44,8 +43,8 @@ type RedeemedItem = {
   id: string;
   itemId: string;
   itemTitle: string;
-  price?: number | null;
-  status?: string | null; // "pending" | "redeemed" | etc.
+  price?: number;
+  status?: "pending" | "redeemed";
   createdAt?: any;
 };
 
@@ -105,8 +104,6 @@ function formatActivityType(t: string): string {
       return "Shared tutorial";
     case "market_redeem":
       return "Redeemed from marketplace";
-    case "arabic_quiz":
-      return "Arabic quiz";
     default:
       return t.replace(/_/g, " ");
   }
@@ -127,7 +124,9 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   const [displayName, setDisplayName] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
   const [email, setEmail] = useState<string>("");
+
   const [points, setPoints] = useState<number>(0);
   const [lastVisit, setLastVisit] = useState<Date | null>(null);
   const [lastDailyCheckin, setLastDailyCheckin] = useState<Date | null>(null);
@@ -139,6 +138,7 @@ export default function DashboardPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [checkinLoading, setCheckinLoading] = useState(false);
 
+  /* ─────────── Load user + stats ─────────── */
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (!u) {
@@ -147,23 +147,22 @@ export default function DashboardPage() {
       }
 
       setUser(u);
+      setEmail(u.email ?? "");
 
       try {
         const userRef = doc(db, "users", u.uid);
         const snap = await getDoc(userRef);
 
         if (!snap.exists()) {
-          setDisplayName(u.email ?? "Kabayan");
-          setEmail(u.email || "");
+          setDisplayName(u.displayName ?? "");
+          setUsername("");
           setPoints(0);
           setLastVisit(null);
           setLastDailyCheckin(null);
         } else {
           const data = snap.data() as any;
-          setDisplayName(
-            data.username || data.displayName || u.email || "Kabayan"
-          );
-          setEmail(data.email || u.email || "");
+          setDisplayName(data.displayName || u.displayName || "");
+          setUsername(data.username || "");
           setPoints(data.points ?? 0);
           setLastVisit(
             data.lastVisit && data.lastVisit.toDate
@@ -194,7 +193,7 @@ export default function DashboardPage() {
         });
         setActivity(items);
 
-        // Leaderboard (top 10)
+        // Leaderboard
         const usersRef = collection(db, "users");
         const lbQ = query(usersRef, orderBy("points", "desc"), limit(10));
         const lbSnap = await getDocs(lbQ);
@@ -210,29 +209,29 @@ export default function DashboardPage() {
         });
         setLeaderboard(lb);
 
-        // My redeemed marketplace items
-        const purchasesRef = collection(db, "marketplacePurchases");
-        const purchasesQ = query(
-          purchasesRef,
-          where("userId", "==", u.uid),
-          orderBy("createdAt", "desc"),
-          limit(15)
+        // Redeemed items for this user
+        const redRef = collection(db, "marketplacePurchases");
+        const redQ = query(
+        redRef,
+        where("userId", "==", u.uid),       // 🔐 only this user’s docs
+        orderBy("createdAt", "desc"),
+        limit(50)
         );
-        const purchasesSnap = await getDocs(purchasesQ);
+        const redSnap = await getDocs(redQ);
 
-        const redeemed: RedeemedItem[] = [];
-        purchasesSnap.forEach((docSnap) => {
-          const d = docSnap.data() as any;
-          redeemed.push({
+        const list: RedeemedItem[] = [];
+        redSnap.forEach((docSnap) => {
+        const d = docSnap.data() as any;
+        list.push({
             id: docSnap.id,
             itemId: d.itemId,
             itemTitle: d.itemTitle || "Unknown item",
-            price: d.price ?? null,
+            price: d.price,
             status: d.status || "pending",
             createdAt: d.createdAt,
-          });
         });
-        setRedeemedItems(redeemed);
+        });
+        setRedeemedItems(list);
       } catch (err) {
         console.error("Failed to load dashboard:", err);
         setError("Failed to load your Kabayan stats. Please refresh.");
@@ -259,6 +258,20 @@ export default function DashboardPage() {
     nextRank && points < nextRank.min ? nextRank.min - points : 0;
 
   const hasCheckedInToday = isSameDay(lastDailyCheckin, new Date());
+
+  const greetingName = username || displayName || email || "Kabayan";
+  const avatarInitial =
+    (username && username[0]?.toUpperCase()) ||
+    (displayName && displayName[0]?.toUpperCase()) ||
+    (email && email[0]?.toUpperCase()) ||
+    "K";
+
+  // Tiny "badge" stats
+  const learningCount = activity.filter((a) =>
+    ["news_read", "news_share", "video_watched", "video_share"].includes(a.type)
+  ).length;
+
+  const redeemCount = activity.filter((a) => a.type === "market_redeem").length;
 
   const handleDailyCheckin = async () => {
     if (!user) return;
@@ -321,28 +334,74 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
-      {/* Header */}
-      <header className="space-y-1.5">
-        <h1 className="text-2xl font-semibold text-[var(--kh-text)]">
-          Hey,{" "}
-          <span className="text-[var(--kh-yellow)]">
-            {displayName || "Kabayan"}
-          </span>
-        </h1>
-        {email && (
-          <p className="text-[11px] text-[var(--kh-text-muted)]">
-            Signed in as{" "}
-            <span className="font-medium text-[var(--kh-text-secondary)]">
-              {email}
-            </span>
-          </p>
-        )}
-        <p className="text-sm text-[var(--kh-text-secondary)]">
-          This is your Kabayan Hub profile. Check your rank, points, and recent
-          activity. Tuloy lang sa pag-ipon ng Kabayan Points. 🇵🇭
-        </p>
-      </header>
+      {/* Fancy header card with avatar, greeting, badges */}
+      <section className="relative overflow-hidden rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)]/95 p-4 shadow-[var(--kh-card-shadow)] md:p-5">
+        {/* Filipino gradient tint */}
+        <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,_rgba(252,209,22,0.28),_transparent_55%),radial-gradient(circle_at_top_right,_rgba(0,51,160,0.25),_transparent_55%),radial-gradient(circle_at_bottom,_rgba(206,17,38,0.22),_transparent_60%)]" />
 
+        {/* KP coins confetti */}
+        <div className="pointer-events-none absolute right-3 top-3 flex gap-1.5 text-[10px] md:right-4 md:top-4">
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-[var(--kh-yellow)] text-[10px] font-bold text-slate-900 shadow-[0_4px_10px_rgba(0,0,0,0.12)]">
+            KP
+          </span>
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--kh-blue-soft)] text-[9px] font-semibold text-[var(--kh-blue)] shadow-[0_3px_8px_rgba(0,0,0,0.10)]">
+            +5
+          </span>
+          <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--kh-red-soft)] text-[9px] font-semibold text-[var(--kh-red)] shadow-[0_3px_8px_rgba(0,0,0,0.10)]">
+            +15
+          </span>
+        </div>
+
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          {/* Avatar + greeting */}
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--kh-yellow-soft)] text-base font-bold text-slate-900 shadow-[var(--kh-card-shadow)] md:h-14 md:w-14 md:text-lg">
+              {avatarInitial}
+            </div>
+            <div className="space-y-1">
+              <h1 className="text-lg font-semibold text-[var(--kh-text)] md:text-xl">
+                Hey,{" "}
+                <span className="text-[var(--kh-blue)]">{greetingName}</span>
+              </h1>
+              {email && (
+                <p className="text-[11px] text-[var(--kh-text-muted)] md:text-xs">
+                  {email}
+                </p>
+              )}
+              <p className="text-[11px] text-[var(--kh-text-secondary)] md:text-xs">
+                This is your Kabayan Hub profile. Check your rank, points, and
+                recent activity. Tuloy lang sa pag-ipon ng Kabayan Points. 🇵🇭
+              </p>
+            </div>
+          </div>
+
+          {/* Tiny badge strip */}
+          <div className="mt-1 flex flex-wrap gap-2 text-[10px] md:justify-end md:text-[11px]">
+            <div className="inline-flex items-center gap-1 rounded-full bg-[var(--kh-bg-subtle)] px-3 py-1 text-[var(--kh-text)]">
+              <span>🔥</span>
+              <span>
+                Daily streak:{" "}
+                {hasCheckedInToday ? "on today" : "tap check-in below"}
+              </span>
+            </div>
+            <div className="inline-flex items-center gap-1 rounded-full bg-[var(--kh-blue-soft)] px-3 py-1 text-[var(--kh-blue)]">
+              <span>📚</span>
+              <span>
+                Learner: {learningCount}{" "}
+                {learningCount === 1 ? "action" : "actions"}
+              </span>
+            </div>
+            <div className="inline-flex items-center gap-1 rounded-full bg-[var(--kh-yellow-soft)] px-3 py-1 text-[var(--kh-text)]">
+              <span>🎁</span>
+              <span>
+                Redeems: {redeemCount} {redeemCount === 1 ? "reward" : "rewards"}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Status + errors */}
       {status && (
         <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
           {status}
@@ -358,18 +417,11 @@ export default function DashboardPage() {
       {/* Top summary row */}
       <section className="grid gap-4 md:grid-cols-[2fr,1.3fr]">
         {/* Rank + progress */}
-        <div className="relative rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)] overflow-hidden">
-          {/* Tiny KP coin confetti */}
-          <div className="pointer-events-none absolute -top-3 right-6 flex gap-1 text-[11px] opacity-60">
-            <span>🪙</span>
-            <span>🪙</span>
-            <span>🪙</span>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 relative">
+        <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
+          <div className="flex items-center justify-between gap-3">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--kh-text-muted)]">
-                Kabayan Rank
+                Kabayan rank
               </p>
               <p
                 className="mt-1 text-lg font-semibold"
@@ -428,9 +480,9 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Daily check-in + tips */}
+        {/* Daily check-in + quick tips */}
         <div className="grid gap-3 md:grid-rows-2">
-          {/* Daily check-in card with streak hint */}
+          {/* Daily check-in card */}
           <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-xs text-emerald-900">
             <p className="text-[11px] font-semibold uppercase tracking-wide">
               Daily Kabayan check-in
@@ -452,15 +504,6 @@ export default function DashboardPage() {
                 })}
               </p>
             )}
-
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-emerald-800">
-              <span>🔥</span>
-              <span>
-                Tip: do check-in + 1 news + 1 tutorial daily para may mini
-                &quot;streak&quot; routine ka.
-              </span>
-            </div>
-
             <button
               onClick={handleDailyCheckin}
               disabled={checkinLoading || hasCheckedInToday}
@@ -482,7 +525,7 @@ export default function DashboardPage() {
               </p>
               <p className="mt-1">
                 1) Daily check-in. 2) Read at least one news. 3) Watch one
-                tutorial or do the Arabic quiz.
+                tutorial. Small steps, malaking ipon over time.
               </p>
             </div>
             <div className="rounded-2xl border border-yellow-100 bg-[var(--kh-yellow-soft)] px-4 py-3 text-xs text-[var(--kh-text)]">
@@ -490,144 +533,76 @@ export default function DashboardPage() {
                 Pro tip
               </p>
               <p className="mt-1">
-                Share articles &amp; tutorials with friends. Easy extra KP while
-                helping other Kabayans.
+                Share articles &amp; tutorials with friends. It&apos;s an easy
+                way to stack extra KP while helping other Kabayans.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Recent activity (full width) */}
-      <section className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
-        <div className="flex items-center justify-between gap-2">
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--kh-text)]">
-              Recent Kabayan activity
-            </h2>
-            <p className="text-[11px] text-[var(--kh-text-muted)]">
-              The last things you did that earned (or spent) Kabayan Points.
-            </p>
-          </div>
-          <span className="hidden rounded-full bg-[var(--kh-bg-subtle)] px-3 py-1 text-[10px] text-[var(--kh-text-muted)] md:inline-flex">
-            Showing last {activity.length} actions
-          </span>
-        </div>
-
-        {activity.length === 0 && (
-          <p className="mt-3 text-xs text-[var(--kh-text-secondary)]">
-            Walang activity pa. Try visiting the news, tutorials, mini-games, or
-            doing a daily check-in to start earning KP.
-          </p>
-        )}
-
-        {activity.length > 0 && (
-          <div className="mt-3 space-y-2 text-xs">
-            {activity.map((a) => {
-              const created =
-                a.createdAt && (a.createdAt as any).toDate
-                  ? (a.createdAt as any).toDate()
-                  : null;
-
-              return (
-                <div
-                  key={a.id}
-                  className="flex items-center justify-between rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-2"
-                >
-                  <div className="flex flex-col">
-                    <span className="font-medium text-[var(--kh-text)]">
-                      {formatActivityType(a.type)}
-                    </span>
-                    {created && (
-                      <span className="text-[10px] text-[var(--kh-text-muted)]">
-                        {created.toLocaleDateString()}{" "}
-                        {created.toLocaleTimeString([], {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-right">
-                    <span
-                      className={`text-[11px] font-semibold ${
-                        a.amount >= 0 ? "text-emerald-600" : "text-red-500"
-                      }`}
-                    >
-                      {a.amount >= 0 ? "+" : ""}
-                      {a.amount} KP
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </section>
-
-      {/* Bottom row: My redeemed items + leaderboard */}
-      <section className="grid gap-4 md:grid-cols-2">
-        {/* My redeemed items */}
+      {/* Activity + My redeemed items + leaderboard row */}
+      <section className="grid gap-4 md:grid-cols-[1.4fr,1.3fr]">
+        {/* Recent activity */}
         <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
-          <h2 className="text-sm font-semibold text-[var(--kh-text)]">
-            My redeemed items
-          </h2>
-          <p className="text-[11px] text-[var(--kh-text-muted)]">
-            Items you redeemed from the Kabayan Marketplace. Status updates are
-            managed by the admin.
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <h2 className="text-sm font-semibold text-[var(--kh-text)]">
+                Recent Kabayan activity
+              </h2>
+              <p className="text-[11px] text-[var(--kh-text-muted)]">
+                The last things you did that earned (or spent) Kabayan Points.
+              </p>
+            </div>
+            <span className="hidden rounded-full bg-[var(--kh-bg-subtle)] px-3 py-1 text-[10px] text-[var(--kh-text-muted)] md:inline-flex">
+              Showing last {activity.length} actions
+            </span>
+          </div>
 
-          {redeemedItems.length === 0 && (
+          {activity.length === 0 && (
             <p className="mt-3 text-xs text-[var(--kh-text-secondary)]">
-              Wala ka pang na-redeem. Check the marketplace and try claiming a
-              reward using your Kabayan Points.
+              Walang activity pa. Try visiting the news, tutorials, or doing a
+              daily check-in to start earning KP.
             </p>
           )}
 
-          {redeemedItems.length > 0 && (
+          {activity.length > 0 && (
             <div className="mt-3 space-y-2 text-xs">
-              {redeemedItems.map((item) => {
-                let created: Date | null = null;
-                if (item.createdAt && item.createdAt.toDate) {
-                  created = item.createdAt.toDate();
-                }
-
-                const statusLabel = (item.status || "pending").toLowerCase();
-                const isDone =
-                  statusLabel === "redeemed" || statusLabel === "completed";
+              {activity.map((a) => {
+                const created =
+                  a.createdAt && (a.createdAt as any).toDate
+                    ? (a.createdAt as any).toDate()
+                    : null;
 
                 return (
                   <div
-                    key={item.id}
+                    key={a.id}
                     className="flex items-center justify-between rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-2"
                   >
-                    <div className="flex-1 pr-2">
-                      <p className="text-[11px] font-medium text-[var(--kh-text)]">
-                        {item.itemTitle}
-                      </p>
-                      <p className="text-[10px] text-[var(--kh-text-muted)]">
-                        {item.price != null ? `${item.price} KP` : "—"}{" "}
-                        {created && (
-                          <>
-                            {" · "}
-                            {created.toLocaleDateString()}{" "}
-                            {created.toLocaleTimeString([], {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </>
-                        )}
-                      </p>
+                    <div className="flex flex-col">
+                      <span className="font-medium text-[var(--kh-text)]">
+                        {formatActivityType(a.type)}
+                      </span>
+                      {created && (
+                        <span className="text-[10px] text-[var(--kh-text-muted)]">
+                          {created.toLocaleDateString()}{" "}
+                          {created.toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                      )}
                     </div>
-                    <span
-                      className={`rounded-full px-3 py-1 text-[10px] font-semibold ${
-                        isDone
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
-                      }`}
-                    >
-                      {isDone ? "Redeemed" : "Pending"}
-                    </span>
+                    <div className="text-right">
+                      <span
+                        className={`text-[11px] font-semibold ${
+                          a.amount >= 0 ? "text-emerald-600" : "text-red-500"
+                        }`}
+                      >
+                        {a.amount >= 0 ? "+" : ""}
+                        {a.amount} KP
+                      </span>
+                    </div>
                   </div>
                 );
               })}
@@ -635,77 +610,150 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Global leaderboard */}
-        <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <h2 className="text-sm font-semibold text-[var(--kh-text)]">
-                Kabayan leaderboard
-              </h2>
-              <p className="text-[11px] text-[var(--kh-text-muted)]">
-                Top Kabayans by total Kabayan Points. Grind para umakyat dito. 💪
-              </p>
+        {/* Right column: My redeemed items + leaderboard stacked */}
+        <div className="space-y-4">
+          {/* My redeemed items */}
+          <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-[var(--kh-text)]">
+                  My redeemed items
+                </h2>
+                <p className="text-[11px] text-[var(--kh-text-muted)]">
+                  Items you redeemed from the marketplace.
+                </p>
+              </div>
             </div>
-          </div>
 
-          {leaderboard.length === 0 && (
-            <p className="mt-3 text-xs text-[var(--kh-text-secondary)]">
-              No leaderboard data yet. Earn some points and you&apos;ll start to
-              see names here.
-            </p>
-          )}
+            {redeemedItems.length === 0 && (
+              <p className="mt-3 text-xs text-[var(--kh-text-secondary)]">
+                Wala pang redeemed items. Visit the marketplace when you&apos;re
+                ready to claim a reward.
+              </p>
+            )}
 
-          {leaderboard.length > 0 && (
-            <div className="mt-3 overflow-x-auto text-xs">
-              <table className="min-w-full text-left">
-                <thead>
-                  <tr className="text-[10px] uppercase tracking-wide text-[var(--kh-text-muted)]">
-                    <th className="pb-2 pr-3">Rank</th>
-                    <th className="pb-2 pr-3">Kabayan</th>
-                    <th className="pb-2 text-right">Points</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {leaderboard.map((entry, index) => {
-                    const isMe = user && entry.id === user.uid;
-                    const rankNumber = index + 1;
-                    const medal =
-                      rankNumber === 1
-                        ? "🥇"
-                        : rankNumber === 2
-                        ? "🥈"
-                        : rankNumber === 3
-                        ? "🥉"
-                        : " ";
+            {redeemedItems.length > 0 && (
+              <div className="mt-3 space-y-2 text-xs">
+                {redeemedItems.map((item) => {
+                  let created: Date | null = null;
+                  if (item.createdAt && item.createdAt.toDate) {
+                    created = item.createdAt.toDate();
+                  }
+                  const isRedeemed = item.status === "redeemed";
 
-                    return (
-                      <tr
-                        key={entry.id}
-                        className={`border-t border-[var(--kh-border)] ${
-                          isMe ? "bg-[var(--kh-yellow-soft)]/80" : ""
+                  return (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-2"
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-medium text-[var(--kh-text)]">
+                          {item.itemTitle}
+                        </span>
+                        <span className="text-[10px] text-[var(--kh-text-muted)]">
+                          {item.price ?? "?"} KP
+                          {created && (
+                            <>
+                              {" "}
+                              ·{" "}
+                              {created.toLocaleDateString()}{" "}
+                              {created.toLocaleTimeString([], {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </>
+                          )}
+                        </span>
+                      </div>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-semibold ${
+                          isRedeemed
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-amber-100 text-amber-700"
                         }`}
                       >
-                        <td className="py-2 pr-3 text-[11px] text-[var(--kh-text-secondary)]">
-                          {medal} {rankNumber}
-                        </td>
-                        <td className="py-2 pr-3 text-[11px] text-[var(--kh-text)]">
-                          {entry.name}
-                          {isMe && (
-                            <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                              Ikaw ito
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-2 text-right text-[11px] font-semibold text-[var(--kh-text)]">
-                          {entry.points} KP
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                        {isRedeemed ? "Redeemed" : "Pending"}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Global leaderboard */}
+          <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-[var(--kh-text)]">
+                  Kabayan leaderboard
+                </h2>
+                <p className="text-[11px] text-[var(--kh-text-muted)]">
+                  Top Kabayans by total Kabayan Points. Grind para umakyat
+                  dito. 💪
+                </p>
+              </div>
             </div>
-          )}
+
+            {leaderboard.length === 0 && (
+              <p className="mt-3 text-xs text-[var(--kh-text-secondary)]">
+                No leaderboard data yet. Earn some points and you&apos;ll start
+                to see names here.
+              </p>
+            )}
+
+            {leaderboard.length > 0 && (
+              <div className="mt-3 overflow-x-auto text-xs">
+                <table className="min-w-full text-left">
+                  <thead>
+                    <tr className="text-[10px] uppercase tracking-wide text-[var(--kh-text-muted)]">
+                      <th className="pb-2 pr-3">Rank</th>
+                      <th className="pb-2 pr-3">Kabayan</th>
+                      <th className="pb-2 text-right">Points</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {leaderboard.map((entry, index) => {
+                      const isMe = user && entry.id === user.uid;
+                      const rankNumber = index + 1;
+                      const medal =
+                        rankNumber === 1
+                          ? "🥇"
+                          : rankNumber === 2
+                          ? "🥈"
+                          : rankNumber === 3
+                          ? "🥉"
+                          : " ";
+
+                      return (
+                        <tr
+                          key={entry.id}
+                          className={`border-t border-[var(--kh-border)] ${
+                            isMe ? "bg-[var(--kh-yellow-soft)]/80" : ""
+                          }`}
+                        >
+                          <td className="py-2 pr-3 text-[11px] text-[var(--kh-text-secondary)]">
+                            {medal} {rankNumber}
+                          </td>
+                          <td className="py-2 pr-3 text-[11px] text-[var(--kh-text)]">
+                            {entry.name}
+                            {isMe && (
+                              <span className="ml-2 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                                Ikaw ito
+                              </span>
+                            )}
+                          </td>
+                          <td className="py-2 text-right text-[11px] font-semibold text-[var(--kh-text)]">
+                            {entry.points} KP
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         </div>
       </section>
     </div>

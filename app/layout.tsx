@@ -1,3 +1,4 @@
+// app/layout.tsx
 import "./globals.css";
 import TopNavClient from "./components/TopNavClient";
 
@@ -11,22 +12,29 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const year = new Date().getFullYear();
-
   return (
     <html lang="en" className="kh-light">
-      <body className="kh-bg-pattern min-h-screen text-[var(--kh-text)] antialiased">
+      <body className="min-h-screen bg-[var(--kh-bg)] text-[var(--kh-text)] antialiased">
+        {/* Background orbits / glow */}
+        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
+          <div className="absolute -left-24 top-[-80px] h-64 w-64 rounded-full bg-[rgba(37,99,235,0.16)] blur-3xl" />
+          <div className="absolute right-[-40px] top-32 h-72 w-72 rounded-full bg-[rgba(234,179,8,0.14)] blur-3xl" />
+          <div className="absolute left-1/2 bottom-[-120px] h-80 w-80 -translate-x-1/2 rounded-full bg-[rgba(239,68,68,0.14)] blur-3xl" />
+        </div>
+
         {/* flex column so footer sticks to bottom */}
         <div className="flex min-h-screen flex-col">
           <TopNavClient />
 
-          <main className="mx-auto flex-1 w-full max-w-6xl px-4 pb-10 pt-6 md:pt-8">
-            {children}
+          <main className="mx-auto flex-1 w-full max-w-7xl px-4 md:px-6 lg:px-8 pb-14 pt-6 md:pt-10 lg:pt-12">
+            <div className="page-fade space-y-6 md:space-y-8">
+              {children}
+            </div>
           </main>
 
           <footer className="border-t border-[var(--kh-border)] bg-[var(--kh-blue)]/90">
-            <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-4 text-[11px] text-[var(--kh-bg)] md:flex-row md:items-center md:justify-between">
-              <p>© {year} Kabayan Hub. Built for OFWs.</p>
+            <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 md:px-6 lg:px-8 py-4 text-[11px] text-[var(--kh-bg)] md:flex-row md:items-center md:justify-between">
+              <p>© {new Date().getFullYear()} Kabayan Hub. Built for OFWs.</p>
               <p className="flex items-center gap-1">
                 <span className="inline-flex h-2 w-2 rounded-full bg-[var(--kh-yellow)]" />
                 <span>Created by Kev with 💘.</span>
