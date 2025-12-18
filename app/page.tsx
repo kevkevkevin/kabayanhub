@@ -3,6 +3,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import TambayanMoments from "./components/TambayanMoments";
 
 export default function HomePage() {
   // 1. UPDATE: Add 'href' to each image object
@@ -36,111 +37,73 @@ export default function HomePage() {
 
   return (
     <div className="space-y-12 md:space-y-16">
-      {/* Hero */}
-      <section className="grid gap-8 md:grid-cols-[1.2fr,1fr] md:items-center">
-        <div className="space-y-4">
-          <p className="inline-flex items-center gap-2 rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-card)] px-3 py-1 text-[11px] text-[var(--kh-text-muted)] shadow-[var(--kh-card-shadow)]">
-            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[var(--kh-yellow-soft)] text-[10px]">
-              🇵🇭
+      {/* ───────── HERO SECTION ───────── */}
+      <section className="relative isolate overflow-hidden rounded-3xl mb-10">
+        {/* Background image */}
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: "url('/hero-kabayan.jpg')",
+          }}
+        />
+
+        {/* Dark overlay */}
+        <div className="absolute inset-0 bg-black/55" />
+
+        {/* Content */}
+        <div className="relative z-10 mx-auto max-w-6xl px-6 py-20 md:py-28">
+          <div className="max-w-2xl space-y-5">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-1 text-[11px] font-semibold text-slate-900 shadow">
+              🇵🇭 Kabayan Hub · Saudi Arabia 🇸🇦
             </span>
-            <span>Made by Kabayans, for Kabayans in Saudi</span>
-          </p>
 
-          <h1 className="text-3xl font-semibold leading-tight text-[var(--kh-text)] md:text-4xl">
-            Your <span className="text-[var(--kh-blue)]">Kabayan HQ</span> in
-            Saudi for{" "}
-            <span className="text-[var(--kh-yellow)]">news, income tips</span>,
-            and rewards.
-          </h1>
-
-          <p className="max-w-xl text-sm text-[var(--kh-text-secondary)] md:text-base">
-            Kabayan Hub keeps OFWs updated with life in Saudi, teaches you
-            simple ways to earn online, and rewards you with{" "}
-            <span className="font-semibold">Kabayan Points</span> you can redeem
-            in our marketplace. Isang website lang — for news, learning, and
-            rewards habang nag-iinternet ka.
-          </p>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/signup"
-              className="rounded-full bg-[var(--kh-yellow)] px-5 py-2 text-xs font-semibold text-slate-900 shadow-[var(--kh-card-shadow)] hover:brightness-110 md:text-sm"
-            >
-              Start earning Kabayan Points
-            </Link>
-            <Link
-              href="/news"
-              className="rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-card)] px-5 py-2 text-xs font-semibold text-[var(--kh-text)] hover:border-[var(--kh-border-strong)] hover:bg-[var(--kh-bg-subtle)] md:text-sm"
-            >
-              Browse Saudi news
-            </Link>
-          </div>
-
-          <div className="mt-3 grid gap-3 text-[11px] text-[var(--kh-text-muted)] md:grid-cols-3">
-            <div className="rounded-2xl bg-[var(--kh-bg-subtle)] px-3 py-2">
-              <p className="font-semibold text-[var(--kh-text)]">
-                🇸🇦 For OFWs in Saudi
-              </p>
-              <p>
-                Curated news, reminders, and life updates relevant sa&apos;yo.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-[var(--kh-bg-subtle)] px-3 py-2">
-              <p className="font-semibold text-[var(--kh-text)]">
-                🎓 Learn &amp; earn online
-              </p>
-              <p>
-                Short tutorials on side hustles, freelancing, and money tips.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-[var(--kh-bg-subtle)] px-3 py-2">
-              <p className="font-semibold text-[var(--kh-text)]">
-                🪙 Kabayan Points
-              </p>
-              <p>
-                Earn points from daily check-ins, reading, watching, sharing.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Hero SLIDER image */}
-        <div className="relative">
-          <div className="rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-2 shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-            <div className="relative h-56 w-full overflow-hidden rounded-2xl bg-[var(--kh-bg-subtle)] md:h-72">
-              {heroImages.map((image, index) => (
-                // 2. UPDATE: Wrap img in Link
-                <Link
-                  key={index}
-                  href={image.href}
-                  // We move the absolute/opacity classes to the Link container
-                  // Added 'pointer-events-none' to hidden slides so you don't click the wrong one
-                  className={`absolute left-0 top-0 h-full w-full transition-opacity duration-1000 ease-in-out ${
-                    index === currentIndex 
-                      ? "opacity-100 pointer-events-auto" 
-                      : "opacity-0 pointer-events-none"
-                  }`}
-                >
-                  <img
-                    src={image.src}
-                    alt={image.alt}
-                    className="h-full w-full object-cover"
-                  />
-                </Link>
-              ))}
-            </div>
-
-            <div className="mt-3 flex items-center justify-between gap-2 text-[11px]">
-              <p className="font-semibold text-[var(--kh-text)]">
-                “Sama-sama tayong aangat.”
-              </p>
-              <span className="rounded-full bg-[var(--kh-blue-soft)] px-3 py-1 text-[10px] font-medium text-[var(--kh-blue)]">
-                Built for Kabayans in Saudi 🇵🇭🇸🇦
+            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight">
+              Your Kabayan HQ in Saudi
+              <br />
+              <span className="text-[var(--kh-yellow)]">
+                for news, income tips, and rewards
               </span>
+            </h1>
+
+            <p className="text-sm md:text-base text-white/90 leading-relaxed">
+              Kabayan Hub keeps OFWs updated with life in Saudi,
+              teaches you simple ways to earn online,
+              and rewards you with Kabayan Points you can redeem
+              in our marketplace.
+              <br />
+              <br />
+              <span className="font-semibold">
+                Isang website lang — for news, learning, and rewards habang nag-iinternet ka.
+              </span>
+            </p>
+
+            {/* CTA placeholder */}
+            <div className="pt-3">
+              <a
+                href="/dashboard"
+                className="inline-flex items-center rounded-full bg-[var(--kh-yellow)] px-6 py-3 text-sm font-bold text-slate-900 shadow hover:brightness-105 transition"
+              >
+                Start earning Kabayan Points →
+              </a>
             </div>
           </div>
         </div>
       </section>
+      
+      <section className="mb-12">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-[var(--kh-text)]">
+            Tambayan Moments 💬
+          </h2>
+          <span className="text-[11px] text-[var(--kh-text-muted)]">
+            Mga kwento ng Kabayan ngayon
+          </span>
+        </div>
+
+        {/* Moments component will go here */}
+        <TambayanMoments />
+      </section>
+
 
       {/* How it works */}
       <section className="rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)] md:p-6">

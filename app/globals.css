@@ -3,7 +3,7 @@
 /* ---------- THEME VARIABLES ---------- */
 
 :root {
-  /* default values (will be overridden by kh-light / kh-dark) */
+  /* default values (overridden by kh-light / kh-dark) */
   --kh-bg: #0b1120;
   --kh-bg-card: #020617;
   --kh-bg-subtle: #020617;
@@ -35,54 +35,54 @@
     var(--kh-bg);
 }
 
-/* ---------- LIGHT MODE ---------- */
-
+/* ---------- CUTE BUBBLY LIGHT MODE ---------- */
 .kh-light {
-  --kh-bg: #f9fafb;
-  --kh-bg-card: #ffffff;
-  --kh-bg-subtle: #f3f4f6;
+  /* cute pink-ish white base */
+  --kh-bg: #fff7fb;
+  --kh-bg-card: rgba(255, 255, 255, 0.86);
+  --kh-bg-subtle: rgba(255, 255, 255, 0.55);
 
-  --kh-text: #111827;
+  --kh-text: #1f2937;
   --kh-text-secondary: #4b5563;
   --kh-text-muted: #6b7280;
 
-  --kh-border: #e5e7eb;
-  --kh-border-strong: #d1d5db;
+  --kh-border: rgba(15, 23, 42, 0.10);
+  --kh-border-strong: rgba(15, 23, 42, 0.18);
 
-  --kh-card-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --kh-card-shadow: 0 12px 34px rgba(15, 23, 42, 0.10);
 
-  --kh-blue: #0033a0;
-  --kh-yellow: #fcd116;
-  --kh-red: #ce1126;
+  /* PH accents but softer */
+  --kh-blue: #2f6bff;
+  --kh-yellow: #ffd84a;
+  --kh-red: #ff5b74;
 
-  --kh-blue-soft: #e8f0ff;
-  --kh-yellow-soft: #fff7d1;
-  --kh-red-soft: #fce2e2;
+  --kh-blue-soft: rgba(47, 107, 255, 0.12);
+  --kh-yellow-soft: rgba(255, 216, 74, 0.18);
+  --kh-red-soft: rgba(255, 91, 116, 0.14);
 }
 
-/* ---------- DARK MODE (refined) ---------- */
-
+/* ---------- CUTE GLASS DARK MODE ---------- */
 .kh-dark {
-  --kh-bg: #020617;
-  --kh-bg-card: rgba(15, 23, 42, 0.92);
-  --kh-bg-subtle: rgba(15, 23, 42, 0.78);
+  --kh-bg: #070a14;
+  --kh-bg-card: rgba(15, 23, 42, 0.62);
+  --kh-bg-subtle: rgba(15, 23, 42, 0.42);
 
-  --kh-text: #e5e7eb;
-  --kh-text-secondary: #9ca3af;
-  --kh-text-muted: #6b7280;
+  --kh-text: #eef2ff;
+  --kh-text-secondary: rgba(226, 232, 240, 0.82);
+  --kh-text-muted: rgba(148, 163, 184, 0.80);
 
-  --kh-border: rgba(148, 163, 184, 0.35);
-  --kh-border-strong: rgba(148, 163, 184, 0.6);
+  --kh-border: rgba(255, 255, 255, 0.12);
+  --kh-border-strong: rgba(255, 255, 255, 0.18);
 
-  --kh-card-shadow: 0 22px 60px rgba(15, 23, 42, 0.9);
+  --kh-card-shadow: 0 18px 56px rgba(0, 0, 0, 0.55);
 
-  --kh-blue: #60a5fa;
-  --kh-yellow: #fcd116;
-  --kh-red: #f97373;
+  --kh-blue: #6aa7ff;
+  --kh-yellow: #ffe06a;
+  --kh-red: #ff7a92;
 
-  --kh-blue-soft: #1d3b7a;
-  --kh-yellow-soft: #3f2a00;
-  --kh-red-soft: #4c1010;
+  --kh-blue-soft: rgba(106, 167, 255, 0.16);
+  --kh-yellow-soft: rgba(255, 224, 106, 0.14);
+  --kh-red-soft: rgba(255, 122, 146, 0.14);
 }
 
 /* ---------- APPLY VARS TO DOCUMENT ---------- */
@@ -93,25 +93,16 @@ body {
   color: var(--kh-text);
 }
 
-/* Tailwind theme hook (ok to leave as-is) */
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-/* We still define these so Tailwind doesn’t complain, but
-   the real background/text comes from --kh-* above. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-/* Base typography + font */
+/* Cute background: PH pastel glow + tiny confetti dots */
 body {
+  background:
+    radial-gradient(circle at 12% 10%, rgba(47,107,255,.20), transparent 45%),
+    radial-gradient(circle at 85% 15%, rgba(255,216,74,.20), transparent 45%),
+    radial-gradient(circle at 70% 90%, rgba(255,91,116,.18), transparent 55%),
+    radial-gradient(rgba(15,23,42,.06) 1px, transparent 1px);
+  background-size: auto, auto, auto, 22px 22px;
+  background-position: 0 0, 0 0, 0 0, 0 0;
+
   font-family: Arial, Helvetica, sans-serif;
   font-size: 14px;
   line-height: 1.6;
@@ -140,6 +131,22 @@ h1 {
   }
 }
 
+/* Tailwind theme hook (ok to leave as-is) */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Keep these so Tailwind doesn’t complain */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
 /* --- Kabayan Hub theme toggles (JS uses .kh-light / .kh-dark on <html>) --- */
 
 html.kh-dark {
@@ -150,10 +157,8 @@ html.kh-light {
   color-scheme: light;
 }
 
-/* Light mode – override some older slate-based Tailwind classes
-   so the site doesn’t look “stuck in dark mode”. */
+/* Light mode – override older slate-based Tailwind classes */
 html.kh-light body {
-  background-color: #f9fafb !important;
   color: #0f172a;
 }
 
@@ -167,7 +172,7 @@ html.kh-light .bg-slate-950,
 html.kh-light .bg-slate-900,
 html.kh-light .bg-slate-950\/70,
 html.kh-light .bg-slate-900\/70 {
-  background-color: #ffffff !important;
+  background-color: rgba(255, 255, 255, 0.86) !important;
 }
 
 html.kh-light .text-slate-50,
@@ -181,7 +186,7 @@ html.kh-light .border-slate-800,
 html.kh-light .border-white\/5,
 html.kh-light .border-white\/10,
 html.kh-light .border-white\/15 {
-  border-color: #e5e7eb !important;
+  border-color: rgba(15, 23, 42, 0.12) !important;
 }
 
 /* Keep your yellow KP pills visible in light mode */
@@ -194,7 +199,7 @@ html.kh-light .bg-\[\#FCD116\] {
 @keyframes kp-float {
   0% {
     transform: translateY(0px) translateX(0px) rotate(0deg);
-    opacity: 0.7;
+    opacity: 0.75;
   }
   50% {
     transform: translateY(-8px) translateX(3px) rotate(5deg);
@@ -202,7 +207,7 @@ html.kh-light .bg-\[\#FCD116\] {
   }
   100% {
     transform: translateY(0px) translateX(0px) rotate(0deg);
-    opacity: 0.7;
+    opacity: 0.75;
   }
 }
 
@@ -211,31 +216,24 @@ html.kh-light .bg-\[\#FCD116\] {
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
-  background: radial-gradient(circle at 30% 30%, #facc15, #eab308);
+  background: radial-gradient(circle at 30% 30%, #fff3a6, #ffd84a);
   width: 20px;
   height: 20px;
   font-size: 10px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.14);
   animation: kp-float 4s ease-in-out infinite;
 }
 
-/* delay helpers so coins move differently */
-.kp-coin-delay-1 {
-  animation-delay: 0.2s;
-}
-.kp-coin-delay-2 {
-  animation-delay: 0.7s;
-}
-.kp-coin-delay-3 {
-  animation-delay: 1.3s;
-}
+.kp-coin-delay-1 { animation-delay: 0.2s; }
+.kp-coin-delay-2 { animation-delay: 0.7s; }
+.kp-coin-delay-3 { animation-delay: 1.3s; }
 
-/* ---------- SIMPLE SAUDI SKYLINE STRIP (if you still use it) ---------- */
+/* ---------- SIMPLE SAUDI SKYLINE STRIP (optional) ---------- */
 
 .saudi-skyline {
   background: linear-gradient(
     to top,
-    rgba(15, 23, 42, 0.28),
+    rgba(15, 23, 42, 0.22),
     rgba(15, 23, 42, 0.02)
   );
   position: relative;
@@ -247,27 +245,28 @@ html.kh-light .bg-\[\#FCD116\] {
   position: absolute;
   inset: 30% 6% 0 6%;
   background:
-    linear-gradient(to top, rgba(15, 23, 42, 0.65), transparent 60%),
+    linear-gradient(to top, rgba(15, 23, 42, 0.60), transparent 60%),
     repeating-linear-gradient(
       to right,
-      rgba(15, 23, 42, 0.9),
-      rgba(15, 23, 42, 0.9) 6px,
+      rgba(15, 23, 42, 0.88),
+      rgba(15, 23, 42, 0.88) 6px,
       transparent 6px,
       transparent 14px
     );
   border-radius: 999px 999px 0 0;
-  opacity: 0.7;
+  opacity: 0.65;
 }
 
 /* ---------- NEW GLOBAL UI HELPERS (cards, animation, glow) ---------- */
 
-/* Reusable card surface */
 .kh-card {
-  border-radius: 1.5rem; /* rounded-3xl style */
+  border-radius: 28px;
   background: var(--kh-bg-card);
   border: 1px solid var(--kh-border);
-  box-shadow: var(--kh-card-shadow, 0 18px 45px rgba(15, 23, 42, 0.08));
+  box-shadow: var(--kh-card-shadow);
   padding: 1rem;
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 @media (min-width: 768px) {
@@ -281,33 +280,55 @@ html.kh-light .bg-\[\#FCD116\] {
   transition:
     transform 180ms ease-out,
     box-shadow 180ms ease-out,
+    border-color 180ms ease-out,
     background-color 180ms ease-out;
 }
 
 .card-hover:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 22px 55px rgba(15, 23, 42, 0.12);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+  border-color: var(--kh-border-strong);
 }
 
-/* Page fade-in animation wrapper (used in layout.tsx as .page-fade) */
+/* Page fade-in animation wrapper */
 .page-fade {
   animation: pageFadeIn 220ms ease-out;
 }
 
 @keyframes pageFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-/* Glow helper for KP badge / streak pill */
+/* KP glow helper */
 .kp-glow {
   box-shadow:
-    0 0 0 1px rgba(250, 204, 21, 0.4),
-    0 0 24px rgba(250, 204, 21, 0.55);
+    0 0 0 1px rgba(255, 216, 74, 0.38),
+    0 12px 34px rgba(255, 216, 74, 0.18),
+    0 10px 40px rgba(47, 107, 255, 0.10);
+}
+
+/* Cute animation helpers */
+@keyframes pop {
+  0% { transform: scale(.96); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.pop-in { animation: pop .18s ease-out both; }
+
+@keyframes wiggle {
+  0%,100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+.wiggle-hover:hover { animation: wiggle .25s ease-in-out; }
+
+@keyframes floaty {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+.floaty { animation: floaty 3.8s ease-in-out infinite; }
+
+/* Inputs more bubbly */
+input, textarea, select {
+  border-radius: 16px !important;
 }

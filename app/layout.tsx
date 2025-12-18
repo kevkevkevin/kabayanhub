@@ -7,13 +7,29 @@ export const metadata = {
   description: "OFW life & money playbook for Kabayans in Saudi Arabia.",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const year = new Date().getFullYear();
+
   return (
-    <html lang="en" className="kh-light">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Set theme BEFORE hydration to prevent mismatch */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+(function () {
+  try {
+    var saved = localStorage.getItem("kh-theme");
+    var theme = (saved === "dark" || saved === "light") ? saved : "light";
+    var html = document.documentElement;
+    html.classList.remove("kh-light", "kh-dark");
+    html.classList.add(theme === "dark" ? "kh-dark" : "kh-light");
+  } catch (e) {}
+})();`,
+          }}
+        />
+      </head>
+
       <body className="min-h-screen bg-[var(--kh-bg)] text-[var(--kh-text)] antialiased">
         {/* Background orbits / glow */}
         <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
@@ -26,15 +42,13 @@ export default function RootLayout({
         <div className="flex min-h-screen flex-col">
           <TopNavClient />
 
-          <main className="mx-auto flex-1 w-full max-w-7xl px-4 md:px-6 lg:px-8 pb-14 pt-6 md:pt-10 lg:pt-12">
-            <div className="page-fade space-y-6 md:space-y-8">
-              {children}
-            </div>
+          <main className="mx-auto flex-1 w-full max-w-7xl px-4 pb-14 pt-6 md:px-6 md:pt-10 lg:px-8 lg:pt-12">
+            <div className="page-fade space-y-6 md:space-y-8">{children}</div>
           </main>
 
           <footer className="border-t border-[var(--kh-border)] bg-[var(--kh-blue)]/90">
-            <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 md:px-6 lg:px-8 py-4 text-[11px] text-[var(--kh-bg)] md:flex-row md:items-center md:justify-between">
-              <p>© {new Date().getFullYear()} Kabayan Hub. Built for OFWs.</p>
+            <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-4 text-[11px] text-[var(--kh-bg)] md:flex-row md:items-center md:justify-between md:px-6 lg:px-8">
+              <p>© {year} Kabayan Hub. Built for OFWs.</p>
               <p className="flex items-center gap-1">
                 <span className="inline-flex h-2 w-2 rounded-full bg-[var(--kh-yellow)]" />
                 <span>Created by Kev with 💘.</span>
