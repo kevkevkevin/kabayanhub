@@ -31,6 +31,9 @@ type NewsItem = {
   shareReward?: number;
 };
 
+// 2 rows * 3 columns = 6 items per page
+const ITEMS_PER_PAGE = 6;
+
 export default function NewsPage() {
   const router = useRouter();
   const [news, setNews] = useState<NewsItem[]>([]);
@@ -39,6 +42,9 @@ export default function NewsPage() {
 
   const [user, setUser] = useState<any>(null);
   const [points, setPoints] = useState<number | null>(null);
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -243,6 +249,26 @@ export default function NewsPage() {
     setSelectedNews(null);
   };
 
+  // --- PAGINATION LOGIC ---
+  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
+  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
+  const currentNews = news.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(news.length / ITEMS_PER_PAGE);
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage((prev) => prev + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  const handlePrevPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage((prev) => prev - 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="space-y-6 md:space-y-8">
       <header className="space-y-2">
@@ -269,9 +295,7 @@ export default function NewsPage() {
       )}
 
       {loading && (
-        <p className="text-sm text-[var(--kh-text-secondary)]">
-          Loading news…
-        </p>
+        <p className="text-sm text-[var(--kh-text-secondary)]">Loading news…</p>
       )}
 
       {!loading && news.length === 0 && (
@@ -280,11 +304,12 @@ export default function NewsPage() {
         </p>
       )}
 
-      <div className="grid gap-4 md:grid-cols-2">
-        {news.map((item) => {
+      {/* Grid: 3 Columns on MD screens, 1 Column on Mobile */}
+      <div className="grid gap-4 md:grid-cols-3">
+        {currentNews.map((item) => {
           const preview =
             item.summary ||
-            (item.content ? item.content.slice(0, 140) + "..." : "");
+            (item.content ? item.content.slice(0, 100) + "..." : "");
 
           return (
             <article
@@ -293,7 +318,7 @@ export default function NewsPage() {
             >
               <div className="space-y-2">
                 {item.imageUrl && (
-                  <div className="mb-2 h-32 w-full overflow-hidden rounded-xl bg-[var(--kh-bg-subtle)]">
+                  <div className="mb-2 h-40 w-full overflow-hidden rounded-xl bg-[var(--kh-bg-subtle)]">
                     <img
                       src={item.imageUrl}
                       alt={item.title}
@@ -307,11 +332,11 @@ export default function NewsPage() {
                     {item.tag}
                   </span>
                 )}
-                <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">
+                <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base line-clamp-2">
                   {item.title}
                 </h2>
                 {preview && (
-                  <p className="text-xs text-[var(--kh-text-secondary)] md:text-sm">
+                  <p className="text-xs text-[var(--kh-text-secondary)] md:text-sm line-clamp-3">
                     {preview}
                   </p>
                 )}
@@ -320,15 +345,13 @@ export default function NewsPage() {
               <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
                 <div className="flex flex-wrap gap-2">
                   <span className="inline-flex items-center gap-1 rounded-full bg-[var(--kh-bg-subtle)] px-2 py-1 text-[10px] text-[var(--kh-text-muted)]">
-                    🧠 Read:{" "}
-                    <span className="font-semibold text-[var(--kh-yellow)]">
-                      +{item.reward ?? 10} KP
+                    🧠 <span className="font-semibold text-[var(--kh-yellow)]">
+                      +{item.reward ?? 10}
                     </span>
                   </span>
                   <span className="inline-flex items-center gap-1 rounded-full bg-[var(--kh-bg-subtle)] px-2 py-1 text-[10px] text-[var(--kh-text-muted)]">
-                    📤 Share:{" "}
-                    <span className="font-semibold text-[#F97373]">
-                      +{item.shareReward ?? 5} KP
+                    📤 <span className="font-semibold text-[#F97373]">
+                      +{item.shareReward ?? 5}
                     </span>
                   </span>
                 </div>
@@ -338,13 +361,13 @@ export default function NewsPage() {
                     onClick={() => openModal(item)}
                     className="rounded-full bg-[var(--kh-blue)] px-3 py-1 text-[11px] font-semibold text-white hover:brightness-110 transition"
                   >
-                    Read article
+                    Read
                   </button>
                   <button
                     onClick={() => handleShare(item)}
                     className="rounded-full border border-[var(--kh-border)] px-3 py-1 text-[11px] text-[var(--kh-text-secondary)] hover:border-[var(--kh-border-strong)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
                   >
-                    Share &amp; earn
+                    Share
                   </button>
                 </div>
               </div>
@@ -352,6 +375,29 @@ export default function NewsPage() {
           );
         })}
       </div>
+
+      {/* Pagination Controls */}
+      {!loading && news.length > ITEMS_PER_PAGE && (
+        <div className="flex items-center justify-center gap-4 pt-4">
+          <button
+            onClick={handlePrevPage}
+            disabled={currentPage === 1}
+            className="rounded-full border border-[var(--kh-border)] px-4 py-2 text-xs font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] disabled:opacity-50 disabled:hover:bg-transparent"
+          >
+            ← Previous
+          </button>
+          <span className="text-xs font-medium text-[var(--kh-text-muted)]">
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            onClick={handleNextPage}
+            disabled={currentPage === totalPages}
+            className="rounded-full border border-[var(--kh-border)] px-4 py-2 text-xs font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] disabled:opacity-50 disabled:hover:bg-transparent"
+          >
+            Next →
+          </button>
+        </div>
+      )}
 
       {/* Modal */}
       {showModal && selectedNews && (
@@ -405,7 +451,7 @@ export default function NewsPage() {
                 {selectedNews.title}
               </h2>
 
-              <div className="mt-2 max-h-[260px] overflow-y-auto text-xs text-[var(--kh-text-secondary)] md:text-sm">
+              <div className="mt-2 max-h-[350px] overflow-y-auto text-xs text-[var(--kh-text-secondary)] md:text-sm">
                 {selectedNews.content ? (
                   <div className="space-y-2">
                     <ReactMarkdown>{selectedNews.content}</ReactMarkdown>
