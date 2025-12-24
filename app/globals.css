@@ -1,4 +1,11 @@
 @import "tailwindcss";
+@font-face {
+  font-family: "Baybayin";
+  src: url("/fonts/NotoSansTagalog-Regular.ttf") format("truetype");
+  font-display: swap;
+}
+
+
 
 /* ---------- THEME VARIABLES ---------- */
 
@@ -107,6 +114,16 @@ body {
   font-size: 14px;
   line-height: 1.6;
 }
+
+
+/* ---------- BAYBAYIN FONT HELPER ---------- */
+.baybayin-text {
+  font-family: var(--font-baybayin), system-ui, sans-serif;
+  letter-spacing: 0.08em;
+  font-size: 28px;
+  line-height: 1.4;
+}
+
 
 @media (min-width: 768px) {
   body {

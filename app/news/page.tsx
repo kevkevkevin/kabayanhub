@@ -1,492 +1,250 @@
 // app/news/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
-  doc,
-  getDoc,
   getDocs,
-  increment,
   orderBy,
   query,
-  where,
-  serverTimestamp,
-  addDoc,
-  updateDoc,
+  Timestamp,
 } from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import ReactMarkdown from "react-markdown";
-import { db, auth } from "../../lib/firebase";
+import { db } from "../../lib/firebase";
 
-type NewsItem = {
+type NewsDoc = {
   id: string;
   title: string;
-  tag?: string;
-  summary?: string;
-  content?: string;
+  summary: string;
+  content: string;
   imageUrl?: string;
+  createdAt?: any; // Firestore Timestamp
+  tag?: string;
+
+  // Optional (exists in your DB screenshot, but not required)
   reward?: number;
-  shareReward?: number;
 };
 
-// 2 rows * 3 columns = 6 items per page
-const ITEMS_PER_PAGE = 6;
+function formatDate(value: any) {
+  try {
+    let d: Date | null = null;
+
+    if (!value) return "";
+    if (value instanceof Date) d = value;
+    else if (value instanceof Timestamp) d = value.toDate();
+    else if (typeof value?.toDate === "function") d = value.toDate();
+    else if (typeof value === "string") d = new Date(value);
+
+    if (!d || isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+    });
+  } catch {
+    return "";
+  }
+}
 
 export default function NewsPage() {
-  const router = useRouter();
-  const [news, setNews] = useState<NewsItem[]>([]);
+  const [items, setItems] = useState<NewsDoc[]>([]);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<string | null>(null);
-
-  const [user, setUser] = useState<any>(null);
-  const [points, setPoints] = useState<number | null>(null);
-
-  // Pagination State
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Modal state
-  const [showModal, setShowModal] = useState(false);
-  const [selectedNews, setSelectedNews] = useState<NewsItem | null>(null);
-  const [progress, setProgress] = useState(0);
-  const [progressComplete, setProgressComplete] = useState(false);
-  const [claimLoading, setClaimLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      setUser(u);
-      if (u) {
-        const userRef = doc(db, "users", u.uid);
-        const snap = await getDoc(userRef);
-        const data = snap.data() as any;
-        setPoints(data?.points ?? 0);
-      } else {
-        setPoints(null);
-      }
-    });
+    let mounted = true;
 
-    return () => unsub();
-  }, []);
+    async function load() {
+      setLoading(true);
+      setErr(null);
 
-  useEffect(() => {
-    const fetchNews = async () => {
       try {
         const ref = collection(db, "news");
         const q = query(ref, orderBy("createdAt", "desc"));
         const snap = await getDocs(q);
 
-        const items: NewsItem[] = [];
+        const list: NewsDoc[] = [];
         snap.forEach((docSnap) => {
           const d = docSnap.data() as any;
-          items.push({
+          list.push({
             id: docSnap.id,
-            title: d.title,
-            tag: d.tag,
-            summary: d.summary,
-            content: d.content,
-            imageUrl: d.imageUrl || null,
-            reward: d.reward ?? 10,
-            shareReward: d.shareReward ?? 5,
+            title: d.title || "",
+            summary: d.summary || "",
+            content: d.content || "",
+            imageUrl: d.imageUrl || "",
+            createdAt: d.createdAt,
+            tag: d.tag || "",
+            reward: typeof d.reward === "number" ? d.reward : undefined,
           });
         });
 
-        setNews(items);
-      } catch (err) {
-        console.error("Failed to load news:", err);
-        setStatus("Failed to load news. Please try again later.");
+        if (mounted) setItems(list);
+      } catch (e) {
+        console.error(e);
+        if (mounted) setErr("Failed to load news. Please refresh.");
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
-    };
+    }
 
-    fetchNews();
+    load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  // Reading progress: when modal opens, start an 8s progress
-  useEffect(() => {
-    if (!showModal || !selectedNews) {
-      setProgress(0);
-      setProgressComplete(false);
-      return;
-    }
-
-    setProgress(0);
-    setProgressComplete(false);
-
-    const duration = 8000; // 8 seconds
-    const start = performance.now();
-    let frame: number;
-
-    const tick = (now: number) => {
-      const elapsed = now - start;
-      const pct = Math.min(100, (elapsed / duration) * 100);
-      setProgress(pct);
-      if (pct < 100) {
-        frame = requestAnimationFrame(tick);
-      } else {
-        setProgressComplete(true);
-      }
-    };
-
-    frame = requestAnimationFrame(tick);
-
-    return () => cancelAnimationFrame(frame);
-  }, [showModal, selectedNews?.id]);
-
-  const ensureLoggedIn = () => {
-    if (!user) {
-      setStatus("Log in to earn Kabayan Points from news.");
-      router.push("/login");
-      return false;
-    }
-    return true;
-  };
-
-  // Generic helper to give KP & log activity (only once per news item per type)
-  const givePointsForNews = async (
-    item: NewsItem,
-    type: "news_read" | "news_share",
-    amount: number
-  ) => {
-    if (!ensureLoggedIn() || !user) return;
-
-    setStatus(null);
-
-    try {
-      const userRef = doc(db, "users", user.uid);
-
-      // Check if already claimed for this news + type
-      const activityRef = collection(db, "users", user.uid, "activity");
-      const q = query(
-        activityRef,
-        where("type", "==", type),
-        where("refId", "==", item.id)
-      );
-      const activitySnap = await getDocs(q);
-
-      if (!activitySnap.empty) {
-        setStatus("You already claimed KP for this news.");
-        return;
-      }
-
-      // Get current points
-      const userSnap = await getDoc(userRef);
-      const currentPoints = (userSnap.data() as any)?.points ?? 0;
-
-      await Promise.all([
-        addDoc(activityRef, {
-          type,
-          refId: item.id,
-          amount,
-          createdAt: serverTimestamp(),
-        }),
-        updateDoc(userRef, {
-          points: increment(amount),
-          lastVisit: serverTimestamp(),
-        }),
-      ]);
-
-      setPoints(currentPoints + amount);
-      setStatus(
-        `+${amount} KP from ${
-          type === "news_read" ? "reading this article" : "sharing this news"
-        }!`
-      );
-    } catch (err) {
-      console.error("Failed to give points:", err);
-      setStatus("Failed to give points. Please try again.");
-    }
-  };
-
-  const handleClaimRead = async () => {
-    if (!selectedNews) return;
-    if (!progressComplete) return;
-    setClaimLoading(true);
-    await givePointsForNews(
-      selectedNews,
-      "news_read",
-      selectedNews.reward ?? 10
-    );
-    setClaimLoading(false);
-  };
-
-  const handleShare = async (item: NewsItem) => {
-    await givePointsForNews(item, "news_share", item.shareReward ?? 5);
-
-    try {
-      const url =
-        typeof window !== "undefined"
-          ? `${window.location.origin}/news`
-          : "https://kabayanhub.app/news";
-
-      const text = `Kabayan news for OFWs in Saudi: ${item.title} 🇸🇦🇵🇭`;
-
-      if (navigator.share) {
-        await navigator.share({
-          title: item.title,
-          text,
-          url,
-        });
-      } else {
-        const shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(
-          text
-        )}&url=${encodeURIComponent(url)}`;
-        window.open(shareUrl, "_blank");
-      }
-    } catch (err) {
-      console.log("Share cancelled or failed", err);
-    }
-  };
-
-  const openModal = (item: NewsItem) => {
-    setSelectedNews(item);
-    setShowModal(true);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedNews(null);
-  };
-
-  // --- PAGINATION LOGIC ---
-  const indexOfLastItem = currentPage * ITEMS_PER_PAGE;
-  const indexOfFirstItem = indexOfLastItem - ITEMS_PER_PAGE;
-  const currentNews = news.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(news.length / ITEMS_PER_PAGE);
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage((prev) => prev + 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage((prev) => prev - 1);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
+  const featured = useMemo(() => items.slice(0, 1)[0], [items]);
+  const rest = useMemo(() => items.slice(1), [items]);
 
   return (
     <div className="space-y-6 md:space-y-8">
+      {/* Header */}
       <header className="space-y-2">
-        <h1 className="text-2xl font-semibold text-[var(--kh-text)]">
-          News &amp; Updates
+        <div className="inline-flex items-center gap-2 rounded-full bg-[var(--kh-blue-soft)]/60 px-3 py-1 text-[11px] font-semibold text-[var(--kh-blue)]">
+          📰 News & Updates
+        </div>
+        <h1 className="text-2xl font-semibold text-[var(--kh-text)] md:text-3xl">
+          Kabayan Updates
         </h1>
-        <p className="text-sm text-[var(--kh-text-secondary)]">
-          Curated news and reminders for Kabayans in Saudi Arabia. Read to stay
-          updated, and earn Kabayan Points along the way.
+        <p className="max-w-2xl text-sm text-[var(--kh-text-secondary)]">
+          Easy-to-read updates for OFWs in Saudi — no hassle, no heavy jargon.
+          Tap a post to read full details like a blog.
         </p>
-
-        {points !== null && (
-          <div className="inline-flex items-center gap-2 rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-card)] px-3 py-1 text-[11px]">
-            <span className="text-[var(--kh-text-muted)]">Your balance:</span>
-            <span className="rounded-full bg-[var(--kh-yellow)] px-3 py-1 text-[11px] font-semibold text-slate-900">
-              {points} KP
-            </span>
-          </div>
-        )}
       </header>
 
-      {status && (
-        <p className="text-[11px] text-emerald-600 md:text-xs">{status}</p>
+      {err && (
+        <p className="rounded-2xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          {err}
+        </p>
       )}
 
       {loading && (
-        <p className="text-sm text-[var(--kh-text-secondary)]">Loading news…</p>
-      )}
-
-      {!loading && news.length === 0 && (
-        <p className="text-sm text-[var(--kh-text-secondary)]">
-          No news yet. Check again later or add items in the admin panel.
-        </p>
-      )}
-
-      {/* Grid: 3 Columns on MD screens, 1 Column on Mobile */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {currentNews.map((item) => {
-          const preview =
-            item.summary ||
-            (item.content ? item.content.slice(0, 100) + "..." : "");
-
-          return (
-            <article
-              key={item.id}
-              className="flex flex-col justify-between rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]"
-            >
-              <div className="space-y-2">
-                {item.imageUrl && (
-                  <div className="mb-2 h-40 w-full overflow-hidden rounded-xl bg-[var(--kh-bg-subtle)]">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.title}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                )}
-
-                {item.tag && (
-                  <span className="inline-flex rounded-full bg-[var(--kh-blue-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--kh-blue)]">
-                    {item.tag}
-                  </span>
-                )}
-                <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base line-clamp-2">
-                  {item.title}
-                </h2>
-                {preview && (
-                  <p className="text-xs text-[var(--kh-text-secondary)] md:text-sm line-clamp-3">
-                    {preview}
-                  </p>
-                )}
-              </div>
-
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-                <div className="flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--kh-bg-subtle)] px-2 py-1 text-[10px] text-[var(--kh-text-muted)]">
-                    🧠 <span className="font-semibold text-[var(--kh-yellow)]">
-                      +{item.reward ?? 10}
-                    </span>
-                  </span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-[var(--kh-bg-subtle)] px-2 py-1 text-[10px] text-[var(--kh-text-muted)]">
-                    📤 <span className="font-semibold text-[#F97373]">
-                      +{item.shareReward ?? 5}
-                    </span>
-                  </span>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    onClick={() => openModal(item)}
-                    className="rounded-full bg-[var(--kh-blue)] px-3 py-1 text-[11px] font-semibold text-white hover:brightness-110 transition"
-                  >
-                    Read
-                  </button>
-                  <button
-                    onClick={() => handleShare(item)}
-                    className="rounded-full border border-[var(--kh-border)] px-3 py-1 text-[11px] text-[var(--kh-text-secondary)] hover:border-[var(--kh-border-strong)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-                  >
-                    Share
-                  </button>
-                </div>
-              </div>
-            </article>
-          );
-        })}
-      </div>
-
-      {/* Pagination Controls */}
-      {!loading && news.length > ITEMS_PER_PAGE && (
-        <div className="flex items-center justify-center gap-4 pt-4">
-          <button
-            onClick={handlePrevPage}
-            disabled={currentPage === 1}
-            className="rounded-full border border-[var(--kh-border)] px-4 py-2 text-xs font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] disabled:opacity-50 disabled:hover:bg-transparent"
-          >
-            ← Previous
-          </button>
-          <span className="text-xs font-medium text-[var(--kh-text-muted)]">
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={handleNextPage}
-            disabled={currentPage === totalPages}
-            className="rounded-full border border-[var(--kh-border)] px-4 py-2 text-xs font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] disabled:opacity-50 disabled:hover:bg-transparent"
-          >
-            Next →
-          </button>
+        <div className="kh-card">
+          <p className="text-sm text-[var(--kh-text-secondary)]">Loading news…</p>
         </div>
       )}
 
-      {/* Modal */}
-      {showModal && selectedNews && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/50 px-4">
-          <div className="relative w-full max-w-200 rounded-2xl border border-[var(--kh-border-strong)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
-            {/* Close button */}
-            <button
-              onClick={closeModal}
-              className="absolute right-3 top-3 rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-2 py-1 text-[11px] text-[var(--kh-text-muted)] hover:bg-[var(--kh-bg-card)]"
-            >
-              ✕
-            </button>
+      {!loading && items.length === 0 && (
+        <div className="kh-card">
+          <p className="text-sm text-[var(--kh-text-secondary)]">
+            No news posts yet. Add some docs in your <code>news</code> collection.
+          </p>
+        </div>
+      )}
 
-            {/* Progress bar */}
-            <div className="mb-3">
-              <div className="mb-1 flex items-center justify-between text-[11px] text-[var(--kh-text-muted)]">
-                <span>Reading progress</span>
-                <span>{Math.round(progress)}%</span>
-              </div>
-              <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--kh-bg-subtle)]">
-                <div
-                  className="h-full bg-gradient-to-r from-[var(--kh-blue)] via-[var(--kh-yellow)] to-[var(--kh-red)] transition-[width]"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              {!progressComplete && (
-                <p className="mt-1 text-[10px] text-[var(--kh-text-muted)]">
-                  Stay on this article to unlock your Kabayan Points.
-                </p>
-              )}
-            </div>
+      {/* Featured */}
+      {!loading && featured && (
+        <Link
+          href={`/news/${featured.id}`}
+          className="group block overflow-hidden rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-[var(--kh-card-shadow)] transition hover:-translate-y-0.5 hover:shadow-xl"
+        >
+          <div className="grid md:grid-cols-[1.1fr,0.9fr]">
+            <div className="relative min-h-[220px] md:min-h-[320px]">
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{
+                  backgroundImage: featured.imageUrl
+                    ? `url('${featured.imageUrl}')`
+                    : "none",
+                }}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-black/10" />
 
-            {/* Content */}
-            <div className="space-y-3">
-              {selectedNews.imageUrl && (
-                <div className="mb-2 h-50 w-full overflow-hidden rounded-xl bg-[var(--kh-bg-subtle)]">
-                  <img
-                    src={selectedNews.imageUrl}
-                    alt={selectedNews.title}
-                    className="h-full w-full object-cover"
-                  />
-                </div>
-              )}
-
-              {selectedNews.tag && (
-                <span className="inline-flex rounded-full bg-[var(--kh-blue-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--kh-blue)]">
-                  {selectedNews.tag}
-                </span>
-              )}
-              <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">
-                {selectedNews.title}
-              </h2>
-
-              <div className="mt-2 max-h-[350px] overflow-y-auto text-xs text-[var(--kh-text-secondary)] md:text-sm">
-                {selectedNews.content ? (
-                  <div className="space-y-2">
-                    <ReactMarkdown>{selectedNews.content}</ReactMarkdown>
-                  </div>
-                ) : selectedNews.summary ? (
-                  <p>{selectedNews.summary}</p>
-                ) : (
-                  <p>No content provided for this article.</p>
+              <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                {featured.tag && (
+                  <span className="rounded-full bg-white/90 px-3 py-1 text-[10px] font-semibold text-slate-900">
+                    {featured.tag}
+                  </span>
+                )}
+                {typeof featured.reward === "number" && (
+                  <span className="rounded-full bg-[var(--kh-yellow)] px-3 py-1 text-[10px] font-black text-slate-900">
+                    +{featured.reward} KP
+                  </span>
                 )}
               </div>
+
+              <div className="absolute bottom-4 left-4 right-4">
+                <p className="text-[11px] text-white/80">
+                  {formatDate(featured.createdAt)}
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-white md:text-2xl">
+                  {featured.title}
+                </h2>
+                <p className="mt-2 line-clamp-2 text-sm text-white/90">
+                  {featured.summary}
+                </p>
+              </div>
             </div>
 
-            {/* Claim button */}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-[11px]">
-              <p className="text-[var(--kh-text-secondary)]">
-                Reward:{" "}
-                <span className="font-semibold text-[var(--kh-yellow)]">
-                  +{selectedNews.reward ?? 10} KP
-                </span>{" "}
-                for reading this article.
-              </p>
-              <button
-                onClick={handleClaimRead}
-                disabled={!progressComplete || claimLoading}
-                className="rounded-full bg-[var(--kh-yellow)] px-4 py-1.5 text-[11px] font-semibold text-slate-900 shadow-sm shadow-yellow-400/40 disabled:opacity-60"
-              >
-                {claimLoading
-                  ? "Claiming…"
-                  : progressComplete
-                  ? "Claim KP for reading"
-                  : "Keep reading…"}
-              </button>
+            <div className="flex flex-col justify-between p-5 md:p-6">
+              <div className="space-y-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--kh-text-muted)]">
+                  Featured
+                </p>
+                <p className="text-sm text-[var(--kh-text-secondary)]">
+                  Read the full story with clean formatting, images, and a proper
+                  blog layout.
+                </p>
+              </div>
+
+              <div className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-[var(--kh-blue)]">
+                Read full post
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </div>
             </div>
           </div>
-        </div>
+        </Link>
+      )}
+
+      {/* Grid list */}
+      {!loading && rest.length > 0 && (
+        <section className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {rest.map((n) => (
+            <Link
+              key={n.id}
+              href={`/news/${n.id}`}
+              className="group kh-card card-hover flex flex-col overflow-hidden"
+            >
+              <div className="relative overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)]">
+                <div
+                  className="h-36 w-full bg-cover bg-center transition-transform duration-200 group-hover:scale-[1.03]"
+                  style={{
+                    backgroundImage: n.imageUrl ? `url('${n.imageUrl}')` : "none",
+                  }}
+                />
+                <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                  {n.tag && (
+                    <span className="rounded-full bg-white/90 px-2 py-0.5 text-[10px] font-semibold text-slate-900">
+                      {n.tag}
+                    </span>
+                  )}
+                  {typeof n.reward === "number" && (
+                    <span className="rounded-full bg-[var(--kh-yellow)] px-2 py-0.5 text-[10px] font-black text-slate-900">
+                      +{n.reward} KP
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-3 flex-1 space-y-2">
+                <p className="text-[10px] text-[var(--kh-text-muted)]">
+                  {formatDate(n.createdAt)}
+                </p>
+                <h3 className="line-clamp-2 text-sm font-semibold text-[var(--kh-text)]">
+                  {n.title}
+                </h3>
+                <p className="line-clamp-3 text-xs text-[var(--kh-text-secondary)]">
+                  {n.summary}
+                </p>
+              </div>
+
+              <div className="mt-3 inline-flex items-center gap-2 text-xs font-semibold text-[var(--kh-blue)]">
+                Read
+                <span className="transition-transform group-hover:translate-x-1">→</span>
+              </div>
+            </Link>
+          ))}
+        </section>
       )}
     </div>
   );
