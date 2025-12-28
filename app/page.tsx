@@ -6,513 +6,305 @@ import { useState, useEffect } from "react";
 import TambayanMoments from "./components/TambayanMoments";
 
 export default function HomePage() {
-  // 1. UPDATE: Add 'href' to each image object
   const heroImages = [
-    {
-      src: "/news/banner.jpg",
-      alt: "Cheering OFWs holding a Philippine flag",
-      href: "/", // Where should this slide go?
-    },
-    {
-      src: "/news/tagumpay 1.jpg", 
-      alt: "Kabayans gathering together",
-      href: "/community/events", // Where should this slide go?
-    },
-    {
-      src: "/news/tagumpay 2.jpg",
-      alt: "Community event in Saudi",
-      href: "/signup", // Where should this slide go?
-    },
+    { src: "/news/banner.jpg", alt: "Cheering OFWs", href: "/" },
+    { src: "/news/tagumpay 1.jpg", alt: "Kabayans gathering", href: "/community/events" },
+    { src: "/news/tagumpay 2.jpg", alt: "Community event", href: "/signup" },
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Dynamic greeting based on time
+  const [greeting, setGreeting] = useState("Kamusta!");
+  useEffect(() => {
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Magandang Umaga, Kabayan! ☀️");
+    else if (hour < 18) setGreeting("Magandang Hapon, Kabayan! 🌤️");
+    else setGreeting("Magandang Gabi, Kabayan! 🌙");
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) => (prevIndex + 1) % heroImages.length);
     }, 4000);
-
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
   return (
-    <div className="space-y-12 md:space-y-16">
-      {/* ───────── HERO SECTION ───────── */}
-      <section className="relative isolate overflow-hidden rounded-3xl mb-10">
-        {/* Background image */}
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage: "url('/hero-kabayan.jpg')",
-          }}
-        />
+    <div className="space-y-12 pb-20">
+      
+      {/* ───────── HERO SECTION (BUBBLY STYLE) ───────── */}
+      <section className="relative mt-4">
+        {/* The colorful blob background behind hero */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full max-w-5xl bg-gradient-to-r from-blue-400/20 via-purple-400/20 to-pink-400/20 blur-3xl opacity-60 rounded-full -z-10" />
 
-        {/* Dark overlay */}
-        <div className="absolute inset-0 bg-black/55" />
+        <div className="mx-auto max-w-6xl px-4 md:px-6">
+          <div className="grid lg:grid-cols-12 gap-6 items-center">
+            
+            {/* Left: Text Content */}
+            <div className="lg:col-span-7 space-y-6 text-center lg:text-left z-10">
+               {/* Welcome Pill */}
+               <div className="inline-flex items-center gap-2 rounded-full glass-bubbly px-4 py-1.5 text-xs font-bold text-slate-800 shadow-sm animate-fade-in-up">
+                 <span className="animate-pulse">👋</span> {greeting}
+               </div>
 
-        {/* Content */}
-        <div className="relative z-10 mx-auto max-w-6xl px-6 py-20 md:py-28">
-          <div className="max-w-2xl space-y-5">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-1 text-[11px] font-semibold text-slate-900 shadow">
-              🇵🇭 Kabayan Hub · Saudi Arabia 🇸🇦
-            </span>
+               <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-[var(--kh-text)] leading-[1.1]">
+                 Your <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--kh-blue)] to-cyan-500">Home Base</span> <br />
+                 away from <span className="text-transparent bg-clip-text bg-gradient-to-r from-[var(--kh-red)] to-pink-500">Home.</span>
+               </h1>
 
-            <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white leading-tight">
-              Your Kabayan HQ in Saudi
-              <br />
-              <span className="text-[var(--kh-yellow)]">
-                for news, income tips, and rewards
-              </span>
-            </h1>
+               <p className="text-base md:text-lg text-[var(--kh-text-secondary)] leading-relaxed max-w-xl mx-auto lg:mx-0">
+                 Kabayan Hub is the <b>super-app</b> for OFWs in Saudi. Stay updated, earn extra income, and collect <span className="font-bold text-[var(--kh-yellow)]">Kabayan Points</span> simply by hanging out.
+               </p>
 
-            <p className="text-sm md:text-base text-white/90 leading-relaxed">
-              Kabayan Hub keeps OFWs updated with life in Saudi,
-              teaches you simple ways to earn online,
-              and rewards you with Kabayan Points you can redeem
-              in our marketplace.
-              <br />
-              <br />
-              <span className="font-semibold">
-                Isang website lang — for news, learning, and rewards habang nag-iinternet ka.
-              </span>
-            </p>
-
-            {/* CTA placeholder */}
-            <div className="pt-3">
-              <a
-                href="/dashboard"
-                className="inline-flex items-center rounded-full bg-[var(--kh-yellow)] px-6 py-3 text-sm font-bold text-slate-900 shadow hover:brightness-105 transition"
-              >
-                Start earning Kabayan Points →
-              </a>
+               <div className="flex flex-col sm:flex-row items-center gap-3 justify-center lg:justify-start pt-2">
+                  <a
+                    href="/dashboard"
+                    className="hover-bounce relative inline-flex items-center justify-center rounded-full bg-[var(--kh-yellow)] px-8 py-4 text-sm font-extrabold text-slate-900 shadow-lg shadow-yellow-400/30 hover:bg-yellow-300 transition-all"
+                  >
+                    🚀 Start Earning Points
+                  </a>
+                  <a href="/about" className="text-sm font-semibold text-[var(--kh-text-muted)] hover:text-[var(--kh-blue)] transition px-4">
+                    How does it work?
+                  </a>
+               </div>
             </div>
+
+            {/* Right: Floating Bubbly Image */}
+            <div className="lg:col-span-5 relative mt-8 lg:mt-0">
+              {/* Decorative floating elements */}
+              <div className="absolute -top-6 -right-6 z-20 floaty">
+                <div className="glass-bubbly rounded-2xl p-3 shadow-xl transform rotate-6">
+                  <div className="text-2xl">💰</div>
+                  <div className="text-[10px] font-bold text-slate-500 text-center">Earn</div>
+                </div>
+              </div>
+              <div className="absolute -bottom-6 -left-4 z-20 floaty kp-coin-delay-2">
+                <div className="glass-bubbly rounded-2xl p-3 shadow-xl transform -rotate-6">
+                  <div className="text-2xl">🇵🇭</div>
+                  <div className="text-[10px] font-bold text-slate-500 text-center">Connect</div>
+                </div>
+              </div>
+
+              {/* Main Image Container */}
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-[2.5rem] shadow-2xl border-4 border-white/30">
+                <div
+                  className="absolute inset-0 bg-cover bg-center transition-all duration-700 ease-in-out hover:scale-105"
+                  style={{ backgroundImage: `url('${heroImages[currentIndex].src}')` }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6">
+                   <p className="text-white font-bold text-lg drop-shadow-md">
+                     {heroImages[currentIndex].alt}
+                   </p>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
       
-      <section className="mb-12">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-[var(--kh-text)]">
-            Tambayan Moments 💬
-          </h2>
-          <span className="text-[11px] text-[var(--kh-text-muted)]">
-            Mga kwento ng Kabayan ngayon
-          </span>
+      {/* ───────── TAMBAYAN (SOCIAL) ───────── 
+      <section className="mx-auto max-w-4xl px-4">
+        <div className="glass-bubbly rounded-[2rem] p-6 md:p-8 relative overflow-hidden">
+           <div className="absolute -right-10 -top-10 w-40 h-40 bg-[var(--kh-blue-soft)] rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+
+           <div className="relative z-10">
+             <div className="flex items-center justify-between mb-6">
+               <div className="flex items-center gap-3">
+                 <span className="text-3xl animate-bounce">💬</span>
+                 <div>
+                   <h2 className="text-xl font-bold text-[var(--kh-text)]">Tambayan Moments</h2>
+                   <p className="text-xs text-[var(--kh-text-secondary)]">Anong kwento mo today?</p>
+                 </div>
+               </div>
+               <span className="hidden md:inline-block px-3 py-1 bg-green-100 text-green-700 rounded-full text-[10px] font-bold">
+                 ● 12 Kabayans Online
+               </span>
+             </div>
+
+             <div className="bg-white/50 dark:bg-slate-800/50 rounded-2xl p-2">
+                <TambayanMoments />
+             </div>
+           </div>
+        </div>
+      </section>*/}
+
+      {/* ───────── HOW IT WORKS (GAMIFIED) ───────── */}
+      <section className="mx-auto max-w-6xl px-4">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-[var(--kh-text)]">Simple Routine, <span className="text-[var(--kh-yellow)]">Big Rewards</span></h2>
         </div>
 
-        {/* Moments component will go here */}
-        <TambayanMoments />
-      </section>
+        <div className="grid md:grid-cols-3 gap-4">
+           {/* Step 1 */}
+           <div className="group hover-bounce kh-card border-none bg-gradient-to-br from-blue-50 to-white dark:from-slate-800 dark:to-slate-900 text-center relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-8xl transform translate-x-4 -translate-y-4">📝</div>
+             <div className="w-12 h-12 mx-auto bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xl font-bold mb-4 shadow-sm">1</div>
+             <h3 className="font-bold text-[var(--kh-text)]">Daily Check-in</h3>
+             <p className="text-xs text-[var(--kh-text-secondary)] mt-2">Log in everyday. Think of it as your digital attendance. Instant points!</p>
+           </div>
 
+           {/* Step 2 */}
+           <div className="group hover-bounce kh-card border-none bg-gradient-to-br from-yellow-50 to-white dark:from-slate-800 dark:to-slate-900 text-center relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-8xl transform translate-x-4 -translate-y-4">🧠</div>
+             <div className="w-12 h-12 mx-auto bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-xl font-bold mb-4 shadow-sm">2</div>
+             <h3 className="font-bold text-[var(--kh-text)]">Learn & Share</h3>
+             <p className="text-xs text-[var(--kh-text-secondary)] mt-2">Watch a quick tutorial or share a money tip. Knowledge = Power + Points.</p>
+           </div>
 
-      {/* How it works */}
-      <section className="rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)] md:p-6">
-        <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">
-          How Kabayan Hub works
-        </h2>
-        <p className="mt-1 text-[11px] text-[var(--kh-text-secondary)] md:text-xs">
-          Simple routine para sa OFW na busy: open Kabayan Hub, do your daily
-          tasks, slowly build{" "}
-          <span className="font-semibold">knowledge + points</span>.
-        </p>
-
-        <div className="mt-4 grid gap-3 md:grid-cols-3">
-          <div className="rounded-2xl bg-[var(--kh-bg-subtle)] p-3 text-xs">
-            <p className="text-[11px] font-semibold text-[var(--kh-text-secondary)]">
-              STEP 1 — CHECK IN
-            </p>
-            <p className="mt-1 text-[var(--kh-text)]">
-              Log in, tap your{" "}
-              <span className="font-semibold">daily check-in</span>, and get
-              instant Kabayan Points. Think of it as your digital “attendance”.
-            </p>
-          </div>
-          <div className="rounded-2xl bg-[var(--kh-bg-subtle)] p-3 text-xs">
-            <p className="text-[11px] font-semibold text-[var(--kh-text-secondary)]">
-              STEP 2 — LEARN &amp; SHARE
-            </p>
-            <p className="mt-1 text-[var(--kh-text)]">
-              Read Saudi news, watch tutorials on earning online, then{" "}
-              <span className="font-semibold">share</span> helpful content to
-              friends for extra points.
-            </p>
-          </div>
-          <div className="rounded-2xl bg-[var(--kh-bg-subtle)] p-3 text-xs">
-            <p className="text-[11px] font-semibold text-[var(--kh-text-secondary)]">
-              STEP 3 — REDEEM
-            </p>
-            <p className="mt-1 text-[var(--kh-text)]">
-              Use your points in the Kabayan marketplace for future perks,
-              digital tools, and community rewards.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Mission & Vision */}
-      <section className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)] md:p-6">
-          <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">
-            Our Mission
-          </h2>
-          <p className="mt-2 text-sm text-[var(--kh-text-secondary)]">
-            To give every Kabayan in Saudi a simple online “home base” where
-            they can{" "}
-            <span className="font-semibold">
-              stay informed, grow their income, and feel supported
-            </span>{" "}
-            — even if malayo sa pamilya.
-          </p>
-          <ul className="mt-3 space-y-1.5 text-xs text-[var(--kh-text-secondary)]">
-            <li>• Curated news and reminders relevant to OFWs in Saudi</li>
-            <li>• Simple, Taglish explanations for government updates</li>
-            <li>• Practical lessons on earning and managing money</li>
-          </ul>
-        </div>
-
-        <div className="rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)] md:p-6">
-          <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">
-            Our Vision
-          </h2>
-          <p className="mt-2 text-sm text-[var(--kh-text-secondary)]">
-            A future where OFWs are{" "}
-            <span className="font-semibold">
-              informed, empowered, and financially confident
-            </span>
-            — using tech, community, and good information to build better lives
-            for their families.
-          </p>
-          <ul className="mt-3 space-y-1.5 text-xs text-[var(--kh-text-secondary)]">
-            <li>• OFWs who understand their rights &amp; benefits</li>
-            <li>• More Kabayans exploring online income &amp; skills</li>
-            <li>• A supportive digital community, hindi lang trabaho–bahay</li>
-          </ul>
+           {/* Step 3 */}
+           <div className="group hover-bounce kh-card border-none bg-gradient-to-br from-pink-50 to-white dark:from-slate-800 dark:to-slate-900 text-center relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-8xl transform translate-x-4 -translate-y-4">🎁</div>
+             <div className="w-12 h-12 mx-auto bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-xl font-bold mb-4 shadow-sm">3</div>
+             <h3 className="font-bold text-[var(--kh-text)]">Redeem Rewards</h3>
+             <p className="text-xs text-[var(--kh-text-secondary)] mt-2">Use points for digital tools, load, or community perks in the marketplace.</p>
+           </div>
         </div>
       </section>
 
-      {/* Why Kabayan Hub */}
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">
-          Why Kabayan Hub?
-        </h2>
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 text-xs shadow-[var(--kh-card-shadow)]">
-            <p className="text-[11px] font-semibold text-[var(--kh-text-secondary)]">
-              📰 News for Kabayans
-            </p>
-            <p className="mt-1 text-[var(--kh-text-secondary)]">
-              Updates on Saudi rules, work, and daily life — written for
-              Filipinos, hindi puro legal jargon.
-            </p>
-            <Link
-              href="/news"
-              className="mt-2 inline-flex text-[11px] font-semibold text-[var(--kh-blue)] underline-offset-2 hover:underline"
-            >
-              Go to News &amp; Updates →
-            </Link>
-          </div>
-          <div className="rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 text-xs shadow-[var(--kh-card-shadow)]">
-            <p className="text-[11px] font-semibold text-[var(--kh-text-secondary)]">
-              🎥 Learn &amp; Tutorials
-            </p>
-            <p className="mt-1 text-[var(--kh-text-secondary)]">
-              Short videos on freelancing, online work, and money basics – para
-              may dagdag kaalaman habang break time.
-            </p>
-            <Link
-              href="/videos"
-              className="mt-2 inline-flex text-[11px] font-semibold text-[var(--kh-blue)] underline-offset-2 hover:underline"
-            >
-              Go to Learn &amp; Tutorials →
-            </Link>
-          </div>
-          <div className="rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 text-xs shadow-[var(--kh-card-shadow)]">
-            <p className="text-[11px] font-semibold text-[var(--kh-text-secondary)]">
-              🎁 Rewards &amp; Marketplace
-            </p>
-            <p className="mt-1 text-[var(--kh-text-secondary)]">
-              Turn your time online into Kabayan Points you can redeem for
-              digital tools, perks, and future community rewards.
-            </p>
-            <Link
-              href="/marketplace"
-              className="mt-2 inline-flex text-[11px] font-semibold text-[var(--kh-blue)] underline-offset-2 hover:underline"
-            >
-              Visit the marketplace →
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* ──────────────────────────────── */}
-{/* 🇵🇭 + 🇸🇦 GOV HELP DESK FOR KABAYANS */}
-{/* ──────────────────────────────── */}
-<section className="mt-16 space-y-10">
-  {/* Header */}
-  <div className="relative overflow-hidden rounded-3xl border border-[var(--kh-border)] bg-white/80 px-4 py-5 shadow-[0_10px_40px_rgba(15,23,42,0.08)] md:px-8">
-    {/* soft flags in the back */}
-    <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-gradient-to-br from-[#0038A8]/8 via-[#FCD116]/10 to-[#CE1126]/8 blur-2xl" />
-    <div className="pointer-events-none absolute -left-10 -bottom-10 h-32 w-32 rounded-full bg-gradient-to-tr from-[#006C35]/10 via-[#FFFFFF]/5 to-[#006C35]/10 blur-2xl" />
-
-    <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 text-[10px] font-medium text-white px-3 py-1 shadow-sm">
-      <span className="text-xs">🛟</span>
-      <span>Gov help desk for Kabayans</span>
-    </div>
-
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-      <div>
-        <h2 className="text-xl md:text-2xl font-semibold text-slate-900">
-          Official links for <span className="text-[var(--kh-blue)]">documents</span>,{" "}
-          <span className="text-[var(--kh-yellow)]">money</span>, and{" "}
-          <span className="text-[var(--kh-red)]">residency</span>.
-        </h2>
-        <p className="mt-1 text-xs md:text-sm text-slate-600">
-          Shortcut na — one place for PH & Saudi portals na madalas kailangan ng OFWs.
-        </p>
-      </div>
-
-      <div className="flex flex-wrap gap-2 text-[10px] md:text-[11px]">
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-          📄 For documents
-        </span>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-          💸 For money & benefits
-        </span>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-slate-700">
-          🪪 For residency / visas
-        </span>
-      </div>
-    </div>
-  </div>
-
-  {/* GRID: PH + SAUDI COLUMNS */}
-  <div className="grid gap-8 md:grid-cols-2">
-    {/* 🇵🇭 PH GOV LINKS */}
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#0038A8] via-[#FCD116] to-[#CE1126] text-xs text-white shadow-md">
-            🇵🇭
-          </span>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">
-              Philippine government portals
-            </h3>
-            <p className="text-[11px] text-slate-500">
-              For SSS, Pag-IBIG, PhilHealth, DMW / POEA, and more.
-            </p>
-          </div>
-        </div>
-        <span className="rounded-full bg-amber-100 px-3 py-1 text-[10px] font-semibold text-amber-800">
-          ⭐ Most used by OFWs
-        </span>
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {[
-          {
-            title: "DFA",
-            desc: "Passport appointments, renewals, travel advisories.",
-            url: "https://www.dfa.gov.ph",
-            tag: "Documents",
-            emoji: "🛂",
-          },
-          {
-            title: "DMW / POEA",
-            desc: "OFW services, contracts, OEC, job orders.",
-            url: "https://dmw.gov.ph",
-            tag: "OFW services",
-            emoji: "🧳",
-          },
-          {
-            title: "SSS",
-            desc: "Contributions, loans, benefits checker.",
-            url: "https://www.sss.gov.ph",
-            tag: "Money",
-            emoji: "💼",
-          },
-          {
-            title: "Pag-IBIG",
-            desc: "Savings, MP2, housing & cash loans.",
-            url: "https://www.pagibigfund.gov.ph",
-            tag: "Savings / loans",
-            emoji: "🏠",
-          },
-          {
-            title: "PhilHealth",
-            desc: "Health coverage, member info & benefits.",
-            url: "https://www.philhealth.gov.ph",
-            tag: "Health",
-            emoji: "🩺",
-          },
-          {
-            title: "BIR",
-            desc: "TIN, tax records & eBIR forms.",
-            url: "https://www.bir.gov.ph",
-            tag: "Tax",
-            emoji: "🧾",
-          },
-        ].map((item) => (
-          <a
-            key={item.title}
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex flex-col rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)]
-            transition-transform hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(15,23,42,0.12)]
-            hover:border-transparent hover:bg-gradient-to-br hover:from-slate-50 hover:via-white hover:to-amber-50"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900/90 text-lg text-white shadow-sm group-hover:scale-110 transition-transform">
-                {item.emoji}
+      {/* ───────── GOV HELP DESK (BENTO GRID) ───────── */}
+      <section className="mt-16 mx-auto max-w-6xl px-4">
+        {/* Header */}
+        <div className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-[var(--kh-blue)] via-blue-800 to-[var(--kh-red)] p-8 md:p-12 text-white shadow-xl mb-10 text-center md:text-left">
+          <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+            <div>
+              <div className="inline-block bg-white/20 backdrop-blur-md rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-wider mb-2">
+                🚑 Emergency Kit
               </div>
-              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] text-slate-600">
-                {item.tag}
-              </span>
+              <h2 className="text-3xl md:text-4xl font-bold mb-2">Gov Help Desk</h2>
+              <p className="text-blue-100 text-sm md:text-base max-w-md">
+                No more confusing searches. Direct links to SSS, Absher, OEC, and everything else you need to survive adulting in Saudi.
+              </p>
             </div>
-            <p className="mt-3 text-sm font-semibold text-slate-900">
-              {item.title}
-            </p>
-            <p className="mt-1 text-[11px] text-slate-600 leading-snug">
-              {item.desc}
-            </p>
-            <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-[var(--kh-blue)] group-hover:text-slate-900">
-              Open site
-              <span className="translate-y-[1px] transition-transform group-hover:translate-x-0.5">
-                ↗
-              </span>
-            </span>
-          </a>
-        ))}
-      </div>
-    </div>
+            {/* Visual Icons */}
+            <div className="flex gap-4">
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-lg animate-bounce">🇵🇭</div>
+              <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-3xl shadow-lg animate-bounce [animation-delay:0.2s]">🇸🇦</div>
+            </div>
+          </div>
+          
+          {/* Background pattern */}
+          <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle, white 2px, transparent 2px)', backgroundSize: '24px 24px' }}></div>
+        </div>
 
-    {/* 🇸🇦 SAUDI GOV LINKS */}
-    <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#006C35] via-white to-[#006C35] text-xs text-emerald-900 shadow-md">
-            🇸🇦
-          </span>
-          <div>
-            <h3 className="text-sm font-semibold text-slate-900">
-              Saudi government portals
-            </h3>
-            <p className="text-[11px] text-slate-500">
-              For Iqama, visas, labor concerns, addresses, and deliveries.
-            </p>
+        {/* The Grid */}
+        <div className="grid md:grid-cols-2 gap-8">
+          
+          {/* 🇵🇭 PH GOV LINKS (Blue Theme) */}
+          <div className="space-y-5">
+            <div className="flex items-center gap-3 pl-2">
+              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-xl shadow-sm">🇵🇭</span>
+              <div>
+                <h3 className="font-bold text-xl text-[var(--kh-text)]">Philippine Portals</h3>
+                <p className="text-xs text-[var(--kh-text-secondary)]">SSS, Pag-IBIG, Passport & OEC</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[
+                { title: "DMW / POEA", desc: "Contracts, OEC, & job orders.", tag: "OFW Services", emoji: "🧳", url: "https://dmw.gov.ph" },
+                { title: "SSS", desc: "Contributions, loans, & benefits.", tag: "Money", emoji: "💼", url: "https://www.sss.gov.ph" },
+                { title: "Pag-IBIG", desc: "Savings, MP2, & housing loans.", tag: "Savings", emoji: "🏠", url: "https://www.pagibigfund.gov.ph" },
+                { title: "PhilHealth", desc: "Health coverage & member info.", tag: "Health", emoji: "🩺", url: "https://www.philhealth.gov.ph" },
+                { title: "DFA Passport", desc: "Appointments & travel advisories.", tag: "Documents", emoji: "🛂", url: "https://www.dfa.gov.ph" },
+                { title: "BIR", desc: "TIN, tax records & eBIR forms.", tag: "Tax", emoji: "🧾", url: "https://www.bir.gov.ph" },
+              ].map((item) => (
+                <a
+                  key={item.title}
+                  href={item.url}
+                  target="_blank"
+                  className="group relative flex flex-col justify-between rounded-[2rem] border border-blue-50 bg-white  p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-blue-300 hover:shadow-[0_10px_40px_-10px_rgba(59,130,246,0.15)]"
+                >
+                  <div>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-xl text-blue-600 group-hover:scale-110 transition-transform dark:bg-blue-900/30 dark:text-blue-300">
+                        {item.emoji}
+                      </div>
+                      <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wide dark:bg-slate-700 dark:text-slate-300">
+                        {item.tag}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-[var(--kh-text)] group-hover:text-blue-600 transition-colors">
+                      {item.title}
+                    </h4>
+                    <p className="mt-1 text-xs text-[var(--kh-text-secondary)] leading-relaxed">
+                      {item.desc}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex items-center text-[11px] font-bold text-blue-500 opacity-60 group-hover:opacity-100 transition-opacity">
+                    Open site <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          {/* Saudi Column */}
+          <div className="space-y-5">
+          <div className="flex items-center gap-3 pl-2">
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-100 text-xl shadow-sm">🇸🇦</span>
+            <div>
+              <h3 className="font-bold text-xl text-[var(--kh-text)]">Saudi Essentials</h3>
+              <p className="text-xs text-[var(--kh-text-secondary)]">Iqama, Visa, Labor & Utilities</p>
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            {[
+              { title: "Absher", desc: "Iqama, fines, exit/re-entry.", tag: "Residency", emoji: "📲", url: "https://www.absher.sa" },
+              { title: "MOFA Visa", desc: "Family visit visa & status.", tag: "Visas", emoji: "🎫", url: "https://visa.mofa.gov.sa" },
+              { title: "Musaned", desc: "Domestic worker contracts.", tag: "Household", emoji: "🧹", url: "https://www.musaned.com.sa" },
+              { title: "MHRSD (Labor)", desc: "Labor laws & complaints.", tag: "Labor", emoji: "⚖️", url: "https://www.mhrsd.gov.sa" },
+              { title: "Saudi Post", desc: "National address & delivery.", tag: "Deliveries", emoji: "📦", url: "https://splonline.com.sa" },
+              { title: "Electricity", desc: "Bills & account services.", tag: "Utilities", emoji: "💡", url: "https://www.se.com.sa" },
+            ].map((item) => (
+              <a
+                key={item.title}
+                href={item.url}
+                target="_blank"
+                className="group relative flex flex-col justify-between rounded-[2rem] border border-emerald-50 bg-white  p-5 shadow-sm transition-all hover:-translate-y-1 hover:border-emerald-300 hover:shadow-[0_10px_40px_-10px_rgba(16,185,129,0.15)]"
+              >
+                <div>
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-50 text-xl text-emerald-600 group-hover:scale-110 transition-transform dark:bg-emerald-900/30 dark:text-emerald-300">
+                      {item.emoji}
+                    </div>
+                    <span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-bold text-slate-500 uppercase tracking-wide dark:bg-slate-700 dark:text-slate-300">
+                      {item.tag}
+                    </span>
+                  </div>
+                  <h4 className="font-bold text-[var(--kh-text)] group-hover:text-emerald-600 transition-colors">
+                    {item.title}
+                  </h4>
+                  <p className="mt-1 text-xs text-[var(--kh-text-secondary)] leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center text-[11px] font-bold text-emerald-500 opacity-60 group-hover:opacity-100 transition-opacity">
+                  Open site <span className="ml-1 transition-transform group-hover:translate-x-1">→</span>
+                </div>
+              </a>
+            ))}
           </div>
         </div>
-        <span className="rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold text-emerald-700">
-          🪪 For Iqama & residency
-        </span>
-      </div>
 
-      <div className="grid gap-3 md:grid-cols-2">
-        {[
-          {
-            title: "Absher",
-            desc: "Iqama, traffic fines, exit/re-entry, family members.",
-            url: "https://www.absher.sa",
-            tag: "Residency",
-            emoji: "🟢",
-          },
-          {
-            title: "MOFA Visa",
-            desc: "Family visit visa, status tracking, approvals.",
-            url: "https://visa.mofa.gov.sa",
-            tag: "Visas",
-            emoji: "📝",
-          },
-          {
-            title: "MUSANED",
-            desc: "Domestic worker contracts, complaints, info.",
-            url: "https://www.musaned.com.sa",
-            tag: "Household",
-            emoji: "🏡",
-          },
-          {
-            title: "MHRSD (Labor)",
-            desc: "Labor laws, complaints, work disputes.",
-            url: "https://www.mhrsd.gov.sa",
-            tag: "Labor",
-            emoji: "⚖️",
-          },
-          {
-            title: "Saudi Post (SPL)",
-            desc: "Wasel address, parcels, delivery tracking.",
-            url: "https://splonline.com.sa",
-            tag: "Deliveries",
-            emoji: "📦",
-          },
-          {
-            title: "Saudi Electricity",
-            desc: "Bills, account info, e-services.",
-            url: "https://www.se.com.sa",
-            tag: "Utilities",
-            emoji: "💡",
-          },
-        ].map((item) => (
-          <a
-            key={item.title}
-            href={item.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="group flex flex-col rounded-2xl border border-emerald-100 bg-white/80 p-4 shadow-[0_4px_18px_rgba(15,23,42,0.04)]
-            transition-transform hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(15,23,42,0.12)]
-            hover:border-transparent hover:bg-gradient-to-br hover:from-emerald-50 hover:via-white hover:to-emerald-50"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-lg text-white shadow-sm group-hover:scale-110 transition-transform">
-                {item.emoji}
-              </div>
-              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] text-emerald-700">
-                {item.tag}
-              </span>
-            </div>
-            <p className="mt-3 text-sm font-semibold text-slate-900">
-              {item.title}
-            </p>
-            <p className="mt-1 text-[11px] text-slate-600 leading-snug">
-              {item.desc}
-            </p>
-            <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-emerald-700 group-hover:text-slate-900">
-              Open site
-              <span className="translate-y-[1px] transition-transform group-hover:translate-x-0.5">
-                ↗
-              </span>
-            </span>
-          </a>
-        ))}
-      </div>
-    </div>
-  </div>
-</section>
+        </div>
+      </section>
+
+      {/* ───────── MISSION/VISION (Softer) ───────── */}
+      <section className="mx-auto max-w-6xl px-4 grid md:grid-cols-2 gap-4 text-xs">
+          <div className="glass-bubbly p-6 rounded-[2rem] text-center">
+            <h4 className="font-bold text-[var(--kh-blue)] mb-2 uppercase tracking-wide">Our Mission</h4>
+            <p className="text-[var(--kh-text-secondary)]">To provide a cozy online home where Kabayans feel safe, supported, and informed.</p>
+          </div>
+          <div className="glass-bubbly p-6 rounded-[2rem] text-center">
+            <h4 className="font-bold text-[var(--kh-yellow)] mb-2 uppercase tracking-wide">Our Vision</h4>
+            <p className="text-[var(--kh-text-secondary)]">A future where every OFW in Saudi is financially confident and digitally savvy.</p>
+          </div>
+      </section>
 
     </div>
-  );
-}
-
-/** Small helper component for gov link cards */
-type GovLinkProps = {
-  name: string;
-  description: string;
-  href: string;
-};
-
-function GovLinkCard({ name, description, href }: GovLinkProps) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 text-xs text-[var(--kh-text-secondary)] shadow-[var(--kh-card-shadow)] hover:border-[var(--kh-blue)] hover:shadow-md"
-    >
-      <p className="text-[11px] font-semibold text-[var(--kh-text)]">{name}</p>
-      <p className="mt-1">{description}</p>
-      <span className="mt-2 inline-flex text-[10px] font-semibold text-[var(--kh-blue)]">
-        Open official site ↗
-      </span>
-    </a>
   );
 }
