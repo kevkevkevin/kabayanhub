@@ -175,13 +175,13 @@ export default function TopNavClient() {
                 >
                   🍽️ Calorie Tracker
                 </Link>
-                <Link
+                {/* <Link
                   href="/supermarket-sale"
                   onClick={() => setIsToolsOpen(false)}
                   className="block px-4 py-3 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
                 >
                   🛒 Supermarket Sale
-                </Link>
+                </Link> */}
               </div>
             )}
           </div>
@@ -312,13 +312,13 @@ export default function TopNavClient() {
               >
                 🍽️ Calorie Tracker
               </Link>
-              <Link
+              {/* <Link
                 href="/supermarket-sale"
                 onClick={closeAllMenus}
                 className="block px-3 py-2 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
               >
                 🛒 Supermarket Sale
-              </Link>
+              </Link> */}
             </div>
 
             <Link

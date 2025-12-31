@@ -3,6 +3,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic"; // 1. Import dynamic
 import {
   addDoc,
   collection,
@@ -19,6 +20,10 @@ import {
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../../lib/firebase";
 
+// 3. Dynamically import ReactQuill-New
+const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
+import "react-quill-new/dist/quill.snow.css";
+
 type NewsDoc = {
   id: string;
   title: string;
@@ -27,15 +32,24 @@ type NewsDoc = {
   imageUrl?: string;
   tag?: string;
   createdAt?: any;
-
   reward?: number;
   shareReward?: number;
+};
+
+// 4. Configure Editor Toolbar (Add image support)
+const quillModules = {
+  toolbar: [
+    [{ header: [1, 2, 3, false] }],
+    ["bold", "italic", "underline", "strike", "blockquote"],
+    [{ list: "ordered" }, { list: "bullet" }],
+    ["link", "image"], // ✅ Enables the image button and image pasting
+    ["clean"],
+  ],
 };
 
 function formatDate(value: any) {
   try {
     let d: Date | null = null;
-
     if (!value) return "";
     if (value instanceof Date) d = value;
     else if (value instanceof Timestamp) d = value.toDate();
@@ -58,25 +72,20 @@ export default function AdminNewsPage() {
 
   const [booting, setBooting] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-
   const [loadingList, setLoadingList] = useState(true);
   const [posts, setPosts] = useState<NewsDoc[]>([]);
-
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Form state (create/update)
+  // Form state
   const [editingId, setEditingId] = useState<string | null>(null);
-
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
-  const [content, setContent] = useState("");
+  const [content, setContent] = useState(""); // ReactQuill will update this string with HTML
   const [imageUrl, setImageUrl] = useState("");
   const [tag, setTag] = useState("");
-
   const [reward, setReward] = useState<string>("10");
   const [shareReward, setShareReward] = useState<string>("5");
-
   const [saving, setSaving] = useState(false);
 
   // ✅ Admin gate
@@ -86,15 +95,12 @@ export default function AdminNewsPage() {
         router.push("/login");
         return;
       }
-
       try {
         const userRef = doc(db, "users", u.uid);
         const snap = await getDoc(userRef);
         const role = snap.exists() ? (snap.data() as any).role : null;
-
         const ok = role === "admin";
         setIsAdmin(ok);
-
         if (!ok) {
           router.push("/dashboard");
           return;
@@ -106,19 +112,16 @@ export default function AdminNewsPage() {
         setBooting(false);
       }
     });
-
     return () => unsub();
   }, [router]);
 
   async function loadPosts() {
     setLoadingList(true);
     setError(null);
-
     try {
       const ref = collection(db, "news");
       const q = query(ref, orderBy("createdAt", "desc"));
       const snap = await getDocs(q);
-
       const list: NewsDoc[] = [];
       snap.forEach((d) => {
         const data = d.data() as any;
@@ -135,7 +138,6 @@ export default function AdminNewsPage() {
             typeof data.shareReward === "number" ? data.shareReward : undefined,
         });
       });
-
       setPosts(list);
     } catch (e) {
       console.error(e);
@@ -186,17 +188,14 @@ export default function AdminNewsPage() {
         await addDoc(collection(db, "news"), {
           title: title.trim(),
           summary: summary.trim(),
-          content: content.trim(),
+          content: content, // Save HTML content
           imageUrl: imageUrl.trim() || "",
           tag: tag.trim() || "",
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
-
-          // optional
           reward: isNaN(rewardNum) ? 0 : rewardNum,
           shareReward: isNaN(shareNum) ? 0 : shareNum,
         });
-
         setStatus("News post created ✅");
         resetForm();
         await loadPosts();
@@ -205,15 +204,13 @@ export default function AdminNewsPage() {
         await updateDoc(doc(db, "news", editingId), {
           title: title.trim(),
           summary: summary.trim(),
-          content: content.trim(),
+          content: content, // Save HTML content
           imageUrl: imageUrl.trim() || "",
           tag: tag.trim() || "",
           updatedAt: serverTimestamp(),
-
           reward: isNaN(rewardNum) ? 0 : rewardNum,
           shareReward: isNaN(shareNum) ? 0 : shareNum,
         });
-
         setStatus("News post updated ✅");
         resetForm();
         await loadPosts();
@@ -229,7 +226,6 @@ export default function AdminNewsPage() {
   function startEdit(p: NewsDoc) {
     setStatus(null);
     setError(null);
-
     setEditingId(p.id);
     setTitle(p.title || "");
     setSummary(p.summary || "");
@@ -238,20 +234,16 @@ export default function AdminNewsPage() {
     setTag(p.tag || "");
     setReward(String(p.reward ?? 10));
     setShareReward(String(p.shareReward ?? 5));
-
-    // scroll to top for the form
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   async function handleDelete(p: NewsDoc) {
     setStatus(null);
     setError(null);
-
     const ok = window.confirm(
       `Delete this post?\n\n"${p.title}"\n\nThis cannot be undone.`
     );
     if (!ok) return;
-
     try {
       await deleteDoc(doc(db, "news", p.id));
       setStatus("Deleted ✅");
@@ -265,9 +257,7 @@ export default function AdminNewsPage() {
   if (booting) {
     return (
       <div className="kh-card">
-        <p className="text-sm text-[var(--kh-text-secondary)]">
-          Loading admin…
-        </p>
+        <p className="text-sm text-[var(--kh-text-secondary)]">Loading admin…</p>
       </div>
     );
   }
@@ -276,6 +266,43 @@ export default function AdminNewsPage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
+      {/* 5. Custom Styles for React Quill to match your theme */}
+      <style jsx global>{`
+        .quill {
+          display: flex;
+          flex-direction: column;
+          background-color: var(--kh-bg);
+          border-radius: 1rem;
+          overflow: hidden;
+          border: 1px solid var(--kh-border);
+        }
+        .ql-toolbar {
+          background-color: var(--kh-bg-subtle);
+          border: none !important;
+          border-bottom: 1px solid var(--kh-border) !important;
+        }
+        .ql-container {
+          border: none !important;
+          font-family: inherit;
+          min-height: 250px;
+        }
+        .ql-editor {
+          color: var(--kh-text);
+          min-height: 250px;
+          font-size: 0.875rem; /* text-sm */
+        }
+        /* Toolbar icons color fix */
+        .ql-snow .ql-stroke {
+          stroke: var(--kh-text-secondary);
+        }
+        .ql-snow .ql-fill {
+          fill: var(--kh-text-secondary);
+        }
+        .ql-snow .ql-picker {
+          color: var(--kh-text-secondary);
+        }
+      `}</style>
+
       {/* Header */}
       <header className="space-y-2">
         <div className="inline-flex items-center gap-2 rounded-full bg-[var(--kh-blue-soft)]/60 px-3 py-1 text-[11px] font-semibold text-[var(--kh-blue)]">
@@ -285,8 +312,8 @@ export default function AdminNewsPage() {
           News Admin
         </h1>
         <p className="max-w-2xl text-sm text-[var(--kh-text-secondary)]">
-          Create blog-style posts for Kabayan Hub. These will show in{" "}
-          <code>/news</code> and open into a full article page.
+          Create blog-style posts. Use the editor to format text and paste images
+          (URLs or direct copy-paste).
         </p>
       </header>
 
@@ -307,7 +334,6 @@ export default function AdminNewsPage() {
           <h2 className="text-sm font-semibold text-[var(--kh-text)]">
             {headerLabel}
           </h2>
-
           {editingId && (
             <button
               type="button"
@@ -329,7 +355,7 @@ export default function AdminNewsPage() {
                 className="w-full rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Tagumpay at Talino: Celebrating Filipino Excellence..."
+                placeholder="e.g. Tagumpay at Talino..."
               />
             </div>
 
@@ -341,7 +367,7 @@ export default function AdminNewsPage() {
                 className="w-full rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
                 value={tag}
                 onChange={(e) => setTag(e.target.value)}
-                placeholder="Event, Advisory, Saudi Update, Community..."
+                placeholder="Event, Advisory, Saudi Update..."
               />
             </div>
           </div>
@@ -359,21 +385,20 @@ export default function AdminNewsPage() {
             />
           </div>
 
+          {/* 6. Replaced textarea with ReactQuill */}
           <div className="space-y-1">
             <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Content (full article)
             </label>
-            <textarea
-              rows={10}
-              className="w-full rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-4 py-3 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              placeholder={`Write your full article here...\n\nTip: Separate paragraphs with a blank line for nicer spacing.`}
-            />
-            <p className="text-[11px] text-[var(--kh-text-muted)]">
-              Tip: Use blank lines between paragraphs. The blog page will render
-              them cleanly.
-            </p>
+            <div className="relative">
+              <ReactQuill
+                theme="snow"
+                value={content}
+                onChange={setContent}
+                modules={quillModules}
+                placeholder="Write your article here... You can paste images directly or use the image button."
+              />
+            </div>
           </div>
 
           <div className="grid gap-3 md:grid-cols-[1.2fr,0.8fr,0.8fr]">
@@ -388,7 +413,6 @@ export default function AdminNewsPage() {
                 placeholder="e.g. /news/tagumpay 1.jpg"
               />
             </div>
-
             <div className="space-y-1">
               <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
                 Reward (KP)
@@ -402,7 +426,6 @@ export default function AdminNewsPage() {
                 placeholder="10"
               />
             </div>
-
             <div className="space-y-1">
               <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
                 Share reward (KP)
