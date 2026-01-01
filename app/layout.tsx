@@ -5,7 +5,12 @@ import { baybayinFont } from "./fonts";
 
 export const metadata = {
   title: "Kabayan Hub",
-  description: "OFW life & money playbook for Kabayans in Saudi Arabia.",
+  description: "Kabayan Hub is the digital home base for OFWs in Saudi Arabia. We turn your daily browsing into benefits—providing a single space to check the latest news, learn new skills, and earn points redeemable for food vouchers and exclusive prizes.",
+  icons: {
+    icon: "/logomain.png", // Place your image in the 'public' folder
+    // You can also specify different sizes if needed:
+    // apple: '/apple-icon.png',
+  },
 };
 
 export default function RootLayout({
