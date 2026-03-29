@@ -23,8 +23,47 @@ export default function HomePage() {
   const [time, setTime] = useState<string>("");
   const [date, setDate] = useState<string>("");
   const [forex, setForex] = useState<string>("15.50");
+  // 🆕 NEW: Loading state for the button
+  const [isLoading, setIsLoading] = useState(false); 
   const [isWidgetOpen, setIsWidgetOpen] = useState(false); // For mobile toggle
 
+  // 1. 🌟 Define the Fetch Function (Reusable)
+  const fetchForexRate = async () => {
+    setIsLoading(true); // 1. Start loading animation/text
+    try {
+      const response = await fetch("https://api.exchangerate-api.com/v4/latest/SAR");
+      const data = await response.json();
+      setForex(data.rates.PHP.toFixed(2));
+    } catch (error) {
+      console.error("Connection failed, using old rate:", error);
+      // Optional: You could show an alert here
+    } finally {
+      setIsLoading(false); // 2. Stop loading (always runs)
+    }
+  };
+
+  useEffect(() => {
+    // 2. Greeting Logic
+    const hour = new Date().getHours();
+    if (hour < 12) setGreeting("Magandang Umaga, Kabayan! ☀️");
+    else if (hour < 18) setGreeting("Magandang Hapon, Kabayan! 🌤️");
+    else setGreeting("Magandang Gabi, Kabayan! 🌙");
+
+    // 3. Clock Logic
+    const updateTime = () => {
+      const now = new Date();
+      setTime(now.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true }));
+      setDate(now.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }));
+    };
+
+    updateTime();
+    const timer = setInterval(updateTime, 1000);
+
+    // 4. Initial Forex Fetch (Run once on load)
+    fetchForexRate();
+
+    return () => clearInterval(timer);
+  }, []);
   useEffect(() => {
     // 1. Greeting Logic
     const hour = new Date().getHours();

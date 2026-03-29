@@ -4,6 +4,7 @@ import { initializeApp } from "firebase/app";
 // https://firebase.google.com/docs/web/setup#available-libraries
 
 // Your web app's Firebase configuration
+//kevnisay@gmail.com (KABAYAN HUB FIREBASE)
 const firebaseConfig = {
   apiKey: "AIzaSyBWOP2l7j2NCSJ5zZm-2RTnJG9teRdkHdA",
   authDomain: "kabayanhub-f59a2.firebaseapp.com",

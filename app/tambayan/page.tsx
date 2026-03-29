@@ -43,6 +43,13 @@ type StreamConfig = {
   url: string;
 };
 
+type TambayanConfig = {
+  marqueeText: string;
+  adImage1: string;
+  adImage2: string;
+  earningPointsEnabled: boolean;
+};
+
 function looksLikeLink(s: string) {
   const t = (s || "").toLowerCase();
   return (
@@ -100,6 +107,14 @@ export default function TambayanPage() {
   const [stream, setStream] = useState<StreamConfig>({
     title: "Tambayan Live",
     url: "",
+  });
+
+  // Tambayan config (marquee + ads)
+  const [tambayanConfig, setTambayanConfig] = useState<TambayanConfig>({
+    marqueeText: "Welcome to Tambayan! 🎉 Share your thoughts and chika with the community.",
+    adImage1: "",
+    adImage2: "",
+    earningPointsEnabled: false,
   });
 
   // Admin edit stream
@@ -191,6 +206,26 @@ export default function TambayanPage() {
     return () => unsub();
   }, []);
 
+  // Load tambayan config (marquee + ads)
+  useEffect(() => {
+    const ref = doc(db, "tambayanConfig", "display");
+    const unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (!snap.exists()) return;
+        const data = snap.data() as any;
+        setTambayanConfig({
+          marqueeText: data.marqueeText || "Welcome to Tambayan! 🎉 Share your thoughts and chika with the community.",
+          adImage1: data.adImage1 || "",
+          adImage2: data.adImage2 || "",
+          earningPointsEnabled: data.earningPointsEnabled || false,
+        });
+      },
+      (err) => console.error("Tambayan config snapshot error:", err)
+    );
+    return () => unsub();
+  }, []);
+
   // Load last 100 chat messages (realtime)
   useEffect(() => {
     setLoadingChat(true);
@@ -235,6 +270,74 @@ export default function TambayanPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages.length]);
+
+  // Auto-delete messages older than 10 minutes + reward logic
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = new Date();
+      const tenMinutesAgo = new Date(now.getTime() - 10 * 60 * 1000);
+
+      setMessages((prevMessages) => {
+        const filtered = prevMessages.filter((msg) => {
+          if (!msg.createdAt || !msg.createdAt.toDate) return true;
+          const msgTime = msg.createdAt.toDate();
+          return msgTime > tenMinutesAgo;
+        });
+
+        // Reward a random user if earning is enabled and there are messages to expire
+        if (
+          tambayanConfig.earningPointsEnabled &&
+          prevMessages.length > 0 &&
+          filtered.length < prevMessages.length
+        ) {
+          // Get unique users from expired messages
+          const expiredMessages = prevMessages.filter((msg) => {
+            if (!msg.createdAt || !msg.createdAt.toDate) return false;
+            const msgTime = msg.createdAt.toDate();
+            return msgTime <= tenMinutesAgo;
+          });
+
+          const uniqueUsers = Array.from(
+            new Set(expiredMessages.map((m) => m.uid))
+          );
+
+          if (uniqueUsers.length > 0) {
+            // Pick random user
+            const randomUid =
+              uniqueUsers[Math.floor(Math.random() * uniqueUsers.length)];
+            const winnerMsg = expiredMessages.find((m) => m.uid === randomUid);
+
+            if (randomUid && winnerMsg) {
+              rewardUser(randomUid, winnerMsg.username);
+            }
+          }
+        }
+
+        return filtered;
+      });
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(cleanupInterval);
+  }, [tambayanConfig.earningPointsEnabled]);
+
+  const rewardUser = async (uid: string, username: string) => {
+    try {
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const currentPoints = userSnap.data()?.points || 0;
+        await updateDoc(userRef, {
+          points: currentPoints + 50,
+        });
+
+        setStatus(`🎉 ${username} won 50 KP! Chat activity reward!`);
+        setTimeout(() => setStatus(null), 5000);
+      }
+    } catch (e) {
+      console.error("Failed to reward user:", e);
+    }
+  };
 
   const stickerMap = useMemo(() => {
     const m = new Map<string, Sticker>();
@@ -438,6 +541,56 @@ export default function TambayanPage() {
             )}
           </div>
 
+          {/* Marquee section */}
+          <style>{`
+            @keyframes marquee {
+              0% { transform: translateX(100%); }
+              100% { transform: translateX(-100%); }
+            }
+            .marquee-text {
+              animation: marquee 15s linear infinite;
+              white-space: nowrap;
+            }
+          `}</style>
+          
+          <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-3">
+            <div className="text-[10px] font-semibold text-[var(--kh-text-secondary)] mb-2">📢 Announcement</div>
+            <div className="overflow-hidden rounded-lg bg-[var(--kh-bg)] h-10 flex items-center">
+              <div className="marquee-text text-sm font-medium text-[var(--kh-text)]">
+                {tambayanConfig.marqueeText}
+                <span className="ml-8">•</span>
+                <span className="ml-8">{tambayanConfig.marqueeText}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Ads section */}
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {tambayanConfig.adImage1 && (
+              <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] h-32 sm:h-40">
+                <img
+                  src={tambayanConfig.adImage1}
+                  alt="Advertisement 1"
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            )}
+            {tambayanConfig.adImage2 && (
+              <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] h-32 sm:h-40">
+                <img
+                  src={tambayanConfig.adImage2}
+                  alt="Advertisement 2"
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                />
+              </div>
+            )}
+            {!tambayanConfig.adImage1 && !tambayanConfig.adImage2 && (
+              <div className="col-span-1 sm:col-span-2 rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 text-center">
+                <p className="text-xs text-[var(--kh-text-muted)]">No advertisements posted yet</p>
+              </div>
+            )}
+          </div>
+
           {/* Admin controls */}
           {isAdmin && (
             <div className="mt-4 rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-4">
@@ -491,20 +644,25 @@ export default function TambayanPage() {
         {/* COLUMN 2: CHAT 
            md:col-span-2 -> Takes 2 out of 5 columns (40%)
         */}
-        <div className="kh-card card-hover flex flex-col h-[600px] md:h-auto md:min-h-[600px] md:col-span-2"> 
+        <div className="kh-card card-hover flex flex-col h-[600px] md:h-auto md:min-h-[600px] md:col-span-2 overflow-hidden"> 
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="text-sm font-semibold text-[var(--kh-text)]">
                 Chat room
               </h2>
-              <p className="text-[11px] text-[var(--kh-text-muted)]">
-                You are: <span className="font-semibold">{username}</span>{" "}
-                {user?.email ? (
-                  <span className="ml-2 text-[10px] text-[var(--kh-text-muted)]">
-                    ({user.email})
-                  </span>
-                ) : null}
-              </p>
+              <div className="mt-1 space-y-1">
+                <p className="text-[11px] text-[var(--kh-text-muted)]">
+                  You are: <span className="font-semibold">{username}</span>{" "}
+                  {user?.email ? (
+                    <span className="ml-2 text-[10px] text-[var(--kh-text-muted)]">
+                      ({user.email})
+                    </span>
+                  ) : null}
+                </p>
+                <p className="text-[10px] text-[var(--kh-text-muted)] italic">
+                  💬 Messages auto-delete after 10 minutes
+                </p>
+              </div>
             </div>
 
             {isAdmin && (
@@ -520,8 +678,8 @@ export default function TambayanPage() {
           </div>
 
           {/* Messages */}
-          <div className="mt-3 flex-1 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)]">
-            <div className="h-full overflow-y-auto p-3 space-y-2">
+          <div className="mt-3 flex-1 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] flex flex-col">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {loadingChat && (
                 <p className="text-xs text-[var(--kh-text-secondary)]">
                   Loading chat…

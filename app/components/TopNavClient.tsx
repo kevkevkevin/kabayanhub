@@ -13,15 +13,10 @@ export default function TopNavClient() {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
-
-  // Mobile menu
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
-  // Dropdown states
   const [isLearnOpen, setIsLearnOpen] = useState(false);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
 
-  // For closing dropdown on outside click
   const learnRef = useRef<HTMLDivElement | null>(null);
   const toolsRef = useRef<HTMLDivElement | null>(null);
 
@@ -64,9 +59,7 @@ export default function TopNavClient() {
 
   const handleLogout = async () => {
     await signOut(auth);
-    setIsMobileMenuOpen(false);
-    setIsLearnOpen(false);
-    setIsToolsOpen(false);
+    closeAllMenus();
     router.push("/");
   };
 
@@ -76,285 +69,119 @@ export default function TopNavClient() {
     setIsToolsOpen(false);
   };
 
+  // Shared Styles
+  const navItemClasses = "px-4 py-1.5 rounded-full text-[13px] font-medium transition-all hover:bg-[var(--kh-bg-subtle)] text-[var(--kh-text-secondary)] hover:text-[var(--kh-text)]";
+  const dropdownItemClasses = "flex items-center gap-3 px-4 py-2.5 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition-colors";
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--kh-border)] bg-[var(--kh-bg-card)]/95 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 md:py-4">
-        {/* Brand */}
-        <Link
-          href="/"
-          className="flex items-center gap-3 z-50"
-          onClick={closeAllMenus}
-        >
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-[var(--kh-yellow)] text-xs font-black text-slate-900 shadow-[var(--kh-card-shadow)]">
-            <img
-              src={logoImg.src}
-              alt="Kabayan Hub Logo"
-              className="h-full w-full object-cover rounded-2xl"
-            />
-          </div>
-          <div className="leading-tight">
-            <p className="text-sm font-semibold tracking-tight text-[var(--kh-text)]">
-              Kabayan Hub
-            </p>
-            <p className="text-[11px] text-[var(--kh-text-muted)]">
-              OFW life &amp; money playbook
-            </p>
-          </div>
-        </Link>
-
-        {/* DESKTOP NAV */}
-        <nav className="hidden md:flex items-center gap-2 text-xs md:text-sm">
-          <Link
-            href="/news"
-            className="rounded-full px-3 py-1 text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-          >
-            News &amp; Updates
+    <header className="sticky top-0 z-50 w-full px-4 py-4">
+      <div className="mx-auto max-w-6xl">
+        {/* Main Pill Container */}
+        <div className="flex h-14 items-center justify-between rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-card)]/80 px-4 shadow-sm backdrop-blur-xl md:px-5">
+          
+          {/* Brand - Smaller and Tighter */}
+          <Link href="/" className="flex items-center gap-2.5 group" onClick={closeAllMenus}>
+            <div className="relative h-8 w-8 overflow-hidden rounded-lg bg-[var(--kh-yellow)] shadow-sm">
+              <img src={logoImg.src} alt="Logo" className="h-full w-full object-cover" />
+            </div>
+            <div className="hidden sm:block leading-none">
+              <h3 className="text-[15px] font-bold tracking-tight text-[var(--kh-text)]">Kabayan Hub</h3>
+              <p className="mt-0.5 text-[9px] uppercase tracking-wider text-[var(--kh-text-muted)] font-bold">OFW All In One Platform</p>
+            </div>
           </Link>
 
-          {/* Learn & Tutorials dropdown */}
-          <div className="relative" ref={learnRef}>
-            <button
-              type="button"
-              onClick={() => {
-                setIsLearnOpen((v) => !v);
-                setIsToolsOpen(false);
-              }}
-              className="rounded-full px-3 py-1 text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition inline-flex items-center gap-1"
-            >
-              Learn &amp; Tutorials
-              <span className="text-[10px] opacity-80">▾</span>
-            </button>
+          {/* DESKTOP NAV - Slimmer Pill */}
+          <nav className="hidden items-center gap-0.5 rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)]/30 p-1 md:flex">
+            <Link href="/news" className={navItemClasses}>News</Link>
 
-            {isLearnOpen && (
-              <div className="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-[var(--kh-card-shadow)]">
-                <Link
-                  href="/videos"
-                  onClick={() => setIsLearnOpen(false)}
-                  className="block px-4 py-3 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-                >
-                  🎥 Videos
-                </Link>
-                <Link
-                  href="/arabic-quiz"
-                  onClick={() => setIsLearnOpen(false)}
-                  className="block px-4 py-3 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-                >
-                  🟢 Learn Arabic (Quiz)
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Kabayan Tools dropdown */}
-          <div className="relative" ref={toolsRef}>
-            <button
-              type="button"
-              onClick={() => {
-                setIsToolsOpen((v) => !v);
-                setIsLearnOpen(false);
-              }}
-              className="rounded-full px-3 py-1 text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition inline-flex items-center gap-1"
-            >
-              Kabayan Tools
-              <span className="text-[10px] opacity-80">▾</span>
-            </button>
-
-            {isToolsOpen && (
-              <div className="absolute right-0 mt-2 w-60 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-[var(--kh-card-shadow)]">
-                <Link
-                  href="/budget"
-                  onClick={() => setIsToolsOpen(false)}
-                  className="block px-4 py-3 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-                >
-                  💸 Budget Tracker
-                </Link>
-                <Link
-                  href="/calorie-tracker"
-                  onClick={() => setIsToolsOpen(false)}
-                  className="block px-4 py-3 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-                >
-                  🍽️ Calorie Tracker
-                </Link>
-                {/* <Link
-                  href="/supermarket-sale"
-                  onClick={() => setIsToolsOpen(false)}
-                  className="block px-4 py-3 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-                >
-                  🛒 Supermarket Sale
-                </Link> */}
-              </div>
-            )}
-          </div>
-
-          <Link
-            href="/marketplace"
-            className="rounded-full px-3 py-1 text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-          >
-            Marketplace
-          </Link>
-
-          <Link
-            href="/dashboard"
-            className="rounded-full bg-[var(--kh-yellow)] px-3 py-1 text-[11px] font-semibold text-slate-900 shadow-[var(--kh-card-shadow)] hover:bg-[#ffe56f] transition"
-          >
-            My Kabayan Stats
-          </Link>
-
-          {/* Theme toggle */}
-          <button
-            onClick={toggleTheme}
-            className="ml-1 inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] text-[13px] text-[var(--kh-text-secondary)] hover:border-[var(--kh-border-strong)] hover:bg-[var(--kh-bg-card)] transition"
-            aria-label="Toggle theme"
-          >
-            {theme === "dark" ? "☀️" : "🌙"}
-          </button>
-
-          {/* Login / Logout */}
-          {user ? (
-            <button
-              onClick={handleLogout}
-              className="rounded-full border border-red-200 px-3 py-1 text-[11px] text-red-600 hover:bg-red-500 hover:text-white transition"
-            >
-              Logout
-            </button>
-          ) : (
-            <Link
-              href="/login"
-              className="rounded-full border border-[var(--kh-border)] px-3 py-1 text-[11px] text-[var(--kh-text-secondary)] hover:border-[var(--kh-border-strong)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)] transition"
-            >
-              Login / Signup
-            </Link>
-          )}
-        </nav>
-
-        {/* MOBILE ACTIONS */}
-        <div className="flex items-center gap-2 md:hidden">
-          <button
-            onClick={toggleTheme}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] text-[13px] text-[var(--kh-text-secondary)] transition"
-          >
-            {theme === "dark" ? "☀️" : "🌙"}
-          </button>
-
-          <button
-            onClick={() => {
-              setIsMobileMenuOpen(!isMobileMenuOpen);
-              setIsLearnOpen(false);
-              setIsToolsOpen(false);
-            }}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-[var(--kh-border)] text-[var(--kh-text)] hover:bg-[var(--kh-bg-subtle)] transition"
-          >
-            {isMobileMenuOpen ? (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 6 6 18" />
-                <path d="m6 6 18 18" />
-              </svg>
-            ) : (
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="4" x2="20" y1="12" y2="12" />
-                <line x1="4" x2="20" y1="6" y2="6" />
-                <line x1="4" x2="20" y1="18" y2="18" />
-              </svg>
-            )}
-          </button>
-        </div>
-      </div>
-
-      {/* MOBILE MENU */}
-      {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-[var(--kh-border)] bg-[var(--kh-bg-card)] px-4 py-4 shadow-xl">
-          <nav className="flex flex-col space-y-2">
-            <Link
-              href="/news"
-              onClick={closeAllMenus}
-              className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-            >
-              News &amp; Updates
-            </Link>
-
-            {/* Learn section (mobile) */}
-            <div className="rounded-md border border-[var(--kh-border)] overflow-hidden">
-              <div className="px-3 py-2 text-sm font-semibold text-[var(--kh-text)] bg-[var(--kh-bg-subtle)]">
-                Learn &amp; Tutorials
-              </div>
-              <Link
-                href="/videos"
-                onClick={closeAllMenus}
-                className="block px-3 py-2 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+            <div className="relative" ref={learnRef}>
+              <button
+                onClick={() => { setIsLearnOpen(!isLearnOpen); setIsToolsOpen(false); }}
+                className={`${navItemClasses} flex items-center gap-1`}
               >
-                🎥 Videos
-              </Link>
-              <Link
-                href="/arabic-quiz"
-                onClick={closeAllMenus}
-                className="block px-3 py-2 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-              >
-                🟢 Learn Arabic (Quiz)
-              </Link>
+                Learn <span className="text-[10px] opacity-50">▾</span>
+              </button>
+              {isLearnOpen && (
+                <div className="absolute left-0 mt-4 w-48 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-xl">
+                  <Link href="/videos" onClick={closeAllMenus} className={dropdownItemClasses}>🎥 Videos</Link>
+                  <Link href="/arabic-quiz" onClick={closeAllMenus} className={dropdownItemClasses}>🟢 Arabic Quiz</Link>
+                </div>
+              )}
             </div>
 
-            {/* Tools section (mobile) */}
-            <div className="rounded-md border border-[var(--kh-border)] overflow-hidden">
-              <div className="px-3 py-2 text-sm font-semibold text-[var(--kh-text)] bg-[var(--kh-bg-subtle)]">
-                Kabayan Tools
-              </div>
-              <Link
-                href="/budget"
-                onClick={closeAllMenus}
-                className="block px-3 py-2 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+            <div className="relative" ref={toolsRef}>
+              <button
+                onClick={() => { setIsToolsOpen(!isToolsOpen); setIsLearnOpen(false); }}
+                className={`${navItemClasses} flex items-center gap-1`}
               >
-                💸 Budget Tracker
-              </Link>
-              <Link
-                href="/calorie-tracker"
-                onClick={closeAllMenus}
-                className="block px-3 py-2 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-              >
-                🍽️ Calorie Tracker
-              </Link>
-              {/* <Link
-                href="/supermarket-sale"
-                onClick={closeAllMenus}
-                className="block px-3 py-2 text-sm text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-              >
-                🛒 Supermarket Sale
-              </Link> */}
+                Tools <span className="text-[10px] opacity-50">▾</span>
+              </button>
+              {isToolsOpen && (
+                <div className="absolute left-0 mt-4 w-48 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-xl">
+                  <Link href="/budget" onClick={closeAllMenus} className={dropdownItemClasses}>💸 Budget Tracker</Link>
+                  <Link href="/calorie-tracker" onClick={closeAllMenus} className={dropdownItemClasses}>🍽️ Calories</Link>
+                </div>
+              )}
             </div>
 
-            <Link
-              href="/marketplace"
-              onClick={closeAllMenus}
-              className="block rounded-md px-3 py-2 text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
-            >
-              Marketplace
-            </Link>
+            <Link href="/marketplace" className={navItemClasses}>Market</Link>
+          </nav>
 
-            <div className="my-2 border-t border-[var(--kh-border)]" />
-
+          {/* Right Side - Fixed Alignment */}
+          <div className="flex items-center gap-2">
             <Link
               href="/dashboard"
-              onClick={closeAllMenus}
-              className="block w-full text-center rounded-md bg-[var(--kh-yellow)] px-3 py-2 text-sm font-bold text-slate-900 shadow-sm hover:bg-[#ffe56f]"
+              className="hidden md:flex h-8 items-center px-4 rounded-full bg-[var(--kh-yellow)] text-[12px] font-bold text-slate-900 shadow-sm hover:brightness-105 transition-all"
             >
-              My Kabayan Stats
+              My Stats
             </Link>
 
+            <button
+              onClick={toggleTheme}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] text-xs hover:bg-[var(--kh-bg-card)] transition-colors"
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
+
             {user ? (
-              <button
-                onClick={handleLogout}
-                className="block w-full rounded-md border border-red-200 px-3 py-2 text-center text-sm font-medium text-red-600 hover:bg-red-50"
+              <button 
+                onClick={handleLogout} 
+                className="hidden md:flex h-8 items-center px-4 rounded-full border border-red-200 text-[12px] font-medium text-red-600 hover:bg-red-50 transition-colors"
               >
                 Logout
               </button>
             ) : (
-              <Link
-                href="/login"
-                onClick={closeAllMenus}
-                className="block w-full rounded-md border border-[var(--kh-border)] px-3 py-2 text-center text-sm font-medium text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-subtle)] hover:text-[var(--kh-text)]"
+              <Link 
+                href="/login" 
+                className="hidden md:flex h-8 items-center px-5 rounded-full bg-slate-900 dark:bg-slate-100 text-[12px] font-medium text-white dark:text-slate-900 hover:opacity-90 transition-all"
               >
-                Login / Signup
+                Login
               </Link>
             )}
+
+            {/* Mobile Toggle */}
+            <button
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--kh-border)] md:hidden"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {isMobileMenuOpen ? <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /> : <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />}
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile Menu Card */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-x-6 top-24 z-50 overflow-hidden rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-2xl md:hidden animate-in zoom-in-95">
+          <nav className="flex flex-col gap-1">
+            <Link href="/news" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">News & Updates</Link>
+            <Link href="/videos" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">🎥 Videos</Link>
+            <Link href="/arabic-quiz" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">🟢 Arabic Quiz</Link>
+            <Link href="/marketplace" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">Marketplace</Link>
+            <div className="my-2 border-t border-[var(--kh-border)]" />
+            <Link href="/dashboard" onClick={closeAllMenus} className="flex justify-center rounded-xl bg-[var(--kh-yellow)] p-3 text-sm font-bold text-slate-900">My Stats</Link>
           </nav>
         </div>
       )}
