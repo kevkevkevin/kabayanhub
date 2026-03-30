@@ -125,6 +125,7 @@ export default function TopNavClient() {
             </div>
 
             <Link href="/marketplace" className={navItemClasses}>Market</Link>
+            <Link href="/tambayan" className={navItemClasses}>Tambayan</Link>
           </nav>
 
           {/* Right Side - Fixed Alignment */}
@@ -180,6 +181,7 @@ export default function TopNavClient() {
             <Link href="/videos" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">🎥 Videos</Link>
             <Link href="/arabic-quiz" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">🟢 Arabic Quiz</Link>
             <Link href="/marketplace" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">Marketplace</Link>
+            <Link href="/tambayan" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">Tambayan</Link>
             <div className="my-2 border-t border-[var(--kh-border)]" />
             <Link href="/dashboard" onClick={closeAllMenus} className="flex justify-center rounded-xl bg-[var(--kh-yellow)] p-3 text-sm font-bold text-slate-900">My Stats</Link>
           </nav>

@@ -122,6 +122,18 @@ export default function TambayanPage() {
   const [editUrl, setEditUrl] = useState("");
   const [savingStream, setSavingStream] = useState(false);
   const [trimming, setTrimming] = useState(false);
+  const [clearing, setClearing] = useState(false);
+
+  // Admin tambayan config editing
+  const [editMarqueeText, setEditMarqueeText] = useState("");
+  const [editAdImage1, setEditAdImage1] = useState("");
+  const [editAdImage2, setEditAdImage2] = useState("");
+  const [savingConfig, setSavingConfig] = useState(false);
+
+  // Admin sticker management
+  const [stickerName, setStickerName] = useState("");
+  const [stickerImageUrl, setStickerImageUrl] = useState("");
+  const [addingStickerLoading, setAddingStickerLoading] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement | null>(null);
 
@@ -214,12 +226,17 @@ export default function TambayanPage() {
       (snap) => {
         if (!snap.exists()) return;
         const data = snap.data() as any;
-        setTambayanConfig({
+        const config = {
           marqueeText: data.marqueeText || "Welcome to Tambayan! 🎉 Share your thoughts and chika with the community.",
           adImage1: data.adImage1 || "",
           adImage2: data.adImage2 || "",
           earningPointsEnabled: data.earningPointsEnabled || false,
-        });
+        };
+        setTambayanConfig(config);
+        // Initialize edit state for admins
+        setEditMarqueeText(config.marqueeText);
+        setEditAdImage1(config.adImage1);
+        setEditAdImage2(config.adImage2);
       },
       (err) => console.error("Tambayan config snapshot error:", err)
     );
@@ -471,362 +488,424 @@ export default function TambayanPage() {
     }
   };
 
+  // Admin-only: Clear ALL chat messages
+  const clearAllChat = async () => {
+    if (!isAdmin) return;
+    if (!window.confirm("⚠️ Are you sure? This will delete ALL messages. This action cannot be undone.")) {
+      return;
+    }
+
+    setClearing(true);
+    setError(null);
+    setStatus(null);
+
+    try {
+      const q = query(collection(db, "tambayanChat"));
+      const snap = await getDocs(q);
+      const docs = snap.docs;
+
+      let deleted = 0;
+      for (const d of docs) {
+        await deleteDoc(doc(db, "tambayanChat", d.id));
+        deleted++;
+      }
+      setStatus(`🗑️ Cleared ${deleted} messages ✅`);
+    } catch (e) {
+      console.error("Clear failed:", e);
+      setError("Failed to clear chat. Check permissions (admin delete needed).");
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  // Admin-only: Add new sticker
+  const addNewSticker = async () => {
+    if (!isAdmin) return;
+
+    const name = stickerName.trim();
+    const imageUrl = stickerImageUrl.trim();
+
+    if (!name || !imageUrl) {
+      setError("Please fill in sticker name and image URL.");
+      return;
+    }
+
+    setAddingStickerLoading(true);
+    setError(null);
+    setStatus(null);
+
+    try {
+      const maxOrder = stickers.length > 0 ? Math.max(...stickers.map(s => s.order)) : 0;
+      await addDoc(collection(db, "tambayanStickers"), {
+        name,
+        imageUrl,
+        enabled: true,
+        order: maxOrder + 1,
+        createdAt: serverTimestamp(),
+      });
+      setStatus("Sticker added ✅");
+      setStickerName("");
+      setStickerImageUrl("");
+    } catch (e) {
+      console.error("Add sticker failed:", e);
+      setError("Failed to add sticker. Check permissions.");
+    } finally {
+      setAddingStickerLoading(false);
+    }
+  };
+
+  // Admin-only: Save tambayan config (marquee + ads)
+  const saveTambayanConfig = async () => {
+    if (!isAdmin) return;
+    setSavingConfig(true);
+    setError(null);
+    setStatus(null);
+
+    try {
+      const ref = doc(db, "tambayanConfig", "display");
+      await setDoc(
+        ref,
+        {
+          marqueeText: editMarqueeText.trim() || "Welcome to Tambayan! 🎉 Share your thoughts and chika with the community.",
+          adImage1: editAdImage1 || "",
+          adImage2: editAdImage2 || "",
+          earningPointsEnabled: tambayanConfig.earningPointsEnabled,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+      setStatus("Tambayan config updated ✅");
+    } catch (e) {
+      console.error("Save config failed:", e);
+      setError("Failed to update config. Check permissions.");
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
   const embedUrl = useMemo(() => toEmbedUrl(stream.url), [stream.url]);
 
   return (
-    <div className="space-y-6 md:space-y-8 page-fade">
-      {/* Header */}
-      <header className="space-y-2">
-        <div className="inline-flex items-center gap-2 rounded-full bg-[var(--kh-yellow-soft)] px-3 py-1 text-[10px] text-[var(--kh-text)]">
-          <span className="kp-coin kp-coin-delay-2">🟡</span>
-          <span className="font-semibold uppercase tracking-wide">
-            Tambayan
-          </span>
-          <span className="text-[10px] text-[var(--kh-text-muted)]">
-            live + chat
-          </span>
+  <div className="space-y-6 md:space-y-8 page-fade">
+    {/* Header */}
+    <header className="space-y-2">
+      <div className="inline-flex items-center gap-2 rounded-full bg-[var(--kh-yellow-soft)] px-3 py-1 text-[10px] text-[var(--kh-text)]">
+        <span className="kp-coin kp-coin-delay-2">🟡</span>
+        <span className="font-semibold uppercase tracking-wide">Tambayan</span>
+        <span className="text-[10px] text-[var(--kh-text-muted)]">live + chat</span>
+      </div>
+
+      <h1 className="text-2xl font-semibold text-[var(--kh-text)] md:text-3xl">
+        Tambayan Live 🎥💬
+      </h1>
+      <p className="max-w-2xl text-sm text-[var(--kh-text-secondary)]">
+        Watch the live stream on the left, then chika on the right.
+      </p>
+    </header>
+
+    {status && (
+      <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+        {status}
+      </p>
+    )}
+    {error && (
+      <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        {error}
+      </p>
+    )}
+
+    {/* LAYOUT: 60/40 Split */}
+    <section className="grid gap-4 grid-cols-1 md:grid-cols-5 items-start">
+      
+      {/* COLUMN 1: VIDEO & ADMIN (60%) */}
+      <div className="kh-card card-hover md:col-span-3 space-y-4">
+        <div>
+          <h2 className="text-sm font-semibold text-[var(--kh-text)]">
+            {stream.title || "Tambayan Live"}
+          </h2>
+          <p className="text-[11px] text-[var(--kh-text-muted)]">
+            Admin sets the live link. Works with YouTube watch links too.
+          </p>
         </div>
 
-        <h1 className="text-2xl font-semibold text-[var(--kh-text)] md:text-3xl">
-          Tambayan Live 🎥💬
-        </h1>
-        <p className="max-w-2xl text-sm text-[var(--kh-text-secondary)]">
-          Watch the live stream on the left, then chika on the right.
-        </p>
-      </header>
+        <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-black">
+          {embedUrl ? (
+            <iframe
+              src={embedUrl}
+              className="aspect-video w-full"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          ) : (
+            <div className="aspect-video w-full flex items-center justify-center text-sm text-white/70">
+              No stream set yet.
+            </div>
+          )}
+        </div>
 
-      {status && (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-          {status}
-        </p>
-      )}
-      {error && (
-        <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-          {error}
-        </p>
-      )}
-
-      {/* LAYOUT UPDATE: 60/40 Split
-         1. Use 'md:grid-cols-5' (5 columns total)
-      */}
-      <section className="grid gap-4 grid-cols-1 md:grid-cols-5 items-start">
+        {/* Marquee Style */}
+        <style>{`
+          @keyframes marquee {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+          }
+          .marquee-text {
+            animation: marquee 15s linear infinite;
+            white-space: nowrap;
+          }
+        `}</style>
         
-        {/* COLUMN 1: VIDEO 
-           md:col-span-3 -> Takes 3 out of 5 columns (60%) 
-        */}
-        <div className="kh-card card-hover md:col-span-3">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-semibold text-[var(--kh-text)]">
-                {stream.title || "Tambayan Live"}
-              </h2>
-              <p className="text-[11px] text-[var(--kh-text-muted)]">
-                Admin sets the live link. Works with YouTube watch links too.
-              </p>
+        {/* Announcement Marquee */}
+        <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-3">
+          <div className="text-[10px] font-semibold text-[var(--kh-text-secondary)] mb-2">📢 Announcement</div>
+          <div className="overflow-hidden rounded-lg bg-[var(--kh-bg)] h-10 flex items-center">
+            <div className="marquee-text text-sm font-medium text-[var(--kh-text)]">
+              {tambayanConfig.marqueeText}
+              <span className="ml-8">•</span>
+              <span className="ml-8">{tambayanConfig.marqueeText}</span>
             </div>
           </div>
+        </div>
 
-          <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-black">
-            {embedUrl ? (
-              <iframe
-                src={embedUrl}
-                className="aspect-video w-full"
-                allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-              />
-            ) : (
-              <div className="aspect-video w-full flex items-center justify-center text-sm text-white/70">
-                No stream set yet.
-              </div>
-            )}
-          </div>
-
-          {/* Marquee section */}
-          <style>{`
-            @keyframes marquee {
-              0% { transform: translateX(100%); }
-              100% { transform: translateX(-100%); }
-            }
-            .marquee-text {
-              animation: marquee 15s linear infinite;
-              white-space: nowrap;
-            }
-          `}</style>
-          
-          <div className="mt-3 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-3">
-            <div className="text-[10px] font-semibold text-[var(--kh-text-secondary)] mb-2">📢 Announcement</div>
-            <div className="overflow-hidden rounded-lg bg-[var(--kh-bg)] h-10 flex items-center">
-              <div className="marquee-text text-sm font-medium text-[var(--kh-text)]">
-                {tambayanConfig.marqueeText}
-                <span className="ml-8">•</span>
-                <span className="ml-8">{tambayanConfig.marqueeText}</span>
-              </div>
+        {/* Ads Section */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {tambayanConfig.adImage1 ? (
+            <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] h-32 sm:h-40">
+              <img src={tambayanConfig.adImage1} alt="Ad 1" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
             </div>
-          </div>
+          ) : null}
+          {tambayanConfig.adImage2 ? (
+            <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] h-32 sm:h-40">
+              <img src={tambayanConfig.adImage2} alt="Ad 2" className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+            </div>
+          ) : null}
+        </div>
 
-          {/* Ads section */}
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {tambayanConfig.adImage1 && (
-              <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] h-32 sm:h-40">
-                <img
-                  src={tambayanConfig.adImage1}
-                  alt="Advertisement 1"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-            )}
-            {tambayanConfig.adImage2 && (
-              <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] h-32 sm:h-40">
-                <img
-                  src={tambayanConfig.adImage2}
-                  alt="Advertisement 2"
-                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-            )}
-            {!tambayanConfig.adImage1 && !tambayanConfig.adImage2 && (
-              <div className="col-span-1 sm:col-span-2 rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 text-center">
-                <p className="text-xs text-[var(--kh-text-muted)]">No advertisements posted yet</p>
-              </div>
-            )}
-          </div>
-
-          {/* Admin controls */}
-          {isAdmin && (
-            <div className="mt-4 rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-4">
-              <h3 className="text-sm font-semibold text-[var(--kh-text)]">
-                Admin: Set stream link
-              </h3>
-              <p className="mt-1 text-xs text-[var(--kh-text-secondary)]">
-                Paste a YouTube link (watch or embed) or any iframe-friendly URL.
-              </p>
-
+        {/* ADMIN CONTROLS SECTION */}
+        {isAdmin && (
+          <div className="space-y-4">
+            {/* Set Stream Link */}
+            <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-4">
+              <h3 className="text-sm font-semibold text-[var(--kh-text)]">Admin: Set stream link</h3>
               <div className="mt-3 grid gap-3">
-                <div>
-                  <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
-                    Title
-                  </label>
-                  <input
-                    value={editTitle}
-                    onChange={(e) => setEditTitle(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
-                    placeholder="Tambayan Live"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
-                    Stream URL
-                  </label>
-                  <input
-                    value={editUrl}
-                    onChange={(e) => setEditUrl(e.target.value)}
-                    className="mt-1 w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
-                    placeholder="https://www.youtube.com/watch?v=..."
-                  />
-                  <p className="mt-1 text-[10px] text-[var(--kh-text-muted)]">
-                    Tip: YouTube watch links auto-convert to embed.
-                  </p>
-                </div>
-
-                <button
-                  onClick={saveStream}
+                <input
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm"
+                  placeholder="Title"
+                />
+                <input
+                  value={editUrl}
+                  onChange={(e) => setEditUrl(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm"
+                  placeholder="Stream URL"
+                />
+                <button 
+                  onClick={saveStream} 
                   disabled={savingStream}
-                  className="inline-flex items-center justify-center rounded-full bg-[var(--kh-blue)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--kh-card-shadow)] hover:brightness-110 disabled:opacity-60"
+                  className="rounded-full bg-[var(--kh-blue)] px-4 py-2 text-sm font-semibold text-white shadow-sm"
                 >
                   {savingStream ? "Saving…" : "Save stream"}
                 </button>
               </div>
             </div>
+
+            {/* Admin: Edit Marquee & Ads */}
+            <div className="mt-4 rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-4">
+              <h3 className="text-sm font-semibold text-[var(--kh-text)]">
+                Admin: Edit marquee & ads
+              </h3>
+              <p className="mt-1 text-xs text-[var(--kh-text-secondary)]">
+                Update the scrolling marquee text and advertisement images.
+              </p>
+
+              <div className="mt-3 grid gap-3">
+                <div>
+                  <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+                    Marquee Text
+                  </label>
+                  <textarea
+                    value={editMarqueeText}
+                    onChange={(e) => setEditMarqueeText(e.target.value)}
+                    maxLength={200}
+                    rows={2}
+                    className="mt-1 w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
+                    placeholder="Welcome message..."
+                  />
+                  <p className="mt-1 text-[10px] text-[var(--kh-text-muted)]">
+                    {editMarqueeText.length}/200 characters
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+                    Ad Image 1 URL
+                  </label>
+                  <input
+                    value={editAdImage1}
+                    onChange={(e) => setEditAdImage1(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
+                    placeholder="https://example.com/ad1.jpg"
+                  />
+                  {editAdImage1 && (
+                    <div className="mt-2 rounded-lg border border-[var(--kh-border)] overflow-hidden">
+                      <img
+                        src={editAdImage1}
+                        alt="Ad preview"
+                        className="w-full h-20 object-cover"
+                        onError={() => setError("Failed to load ad image")}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+                    Ad Image 2 URL
+                  </label>
+                  <input
+                    value={editAdImage2}
+                    onChange={(e) => setEditAdImage2(e.target.value)}
+                    className="mt-1 w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
+                    placeholder="https://example.com/ad2.jpg"
+                  />
+                  {editAdImage2 && (
+                    <div className="mt-2 rounded-lg border border-[var(--kh-border)] overflow-hidden">
+                      <img
+                        src={editAdImage2}
+                        alt="Ad preview"
+                        className="w-full h-20 object-cover"
+                        onError={() => setError("Failed to load ad image")}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <button
+                  onClick={saveTambayanConfig}
+                  disabled={savingConfig}
+                  className="inline-flex items-center justify-center rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-[var(--kh-card-shadow)] hover:brightness-110 disabled:opacity-60"
+                >
+                  {savingConfig ? "Saving…" : "💾 Save config"}
+                </button>
+              </div>
+            </div>
+
+            {/* Admin: Add stickers */}
+            <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-4">
+              <h3 className="text-sm font-semibold text-[var(--kh-text)]">Admin: Add stickers</h3>
+              <div className="mt-3 grid gap-3">
+                <input
+                  value={stickerName}
+                  onChange={(e) => setStickerName(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm"
+                  placeholder="Sticker Name"
+                />
+                <input
+                  value={stickerImageUrl}
+                  onChange={(e) => setStickerImageUrl(e.target.value)}
+                  className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm"
+                  placeholder="Image URL"
+                />
+                <button 
+                  onClick={addNewSticker} 
+                  disabled={addingStickerLoading}
+                  className="rounded-full bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm"
+                >
+                  {addingStickerLoading ? "Adding…" : "✨ Add sticker"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* COLUMN 2: CHAT ROOM (40%) */}
+      <div className="kh-card card-hover flex flex-col h-[600px] md:h-auto md:min-h-[700px] md:col-span-2 overflow-hidden">
+        <div className="flex items-start justify-between">
+          <div>
+            <h2 className="text-sm font-semibold text-[var(--kh-text)]">Chat room</h2>
+            <p className="text-[11px] text-[var(--kh-text-muted)]">
+              You are: <span className="font-semibold">{username}</span>
+            </p>
+          </div>
+          {isAdmin && (
+            <div className="flex gap-2">
+              <button onClick={clearAllChat} className="rounded-full bg-red-50 px-3 py-1 text-[10px] text-red-600 font-bold">🗑️ Clear</button>
+            </div>
           )}
         </div>
 
-        {/* COLUMN 2: CHAT 
-           md:col-span-2 -> Takes 2 out of 5 columns (40%)
-        */}
-        <div className="kh-card card-hover flex flex-col h-[600px] md:h-auto md:min-h-[600px] md:col-span-2 overflow-hidden"> 
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-sm font-semibold text-[var(--kh-text)]">
-                Chat room
-              </h2>
-              <div className="mt-1 space-y-1">
-                <p className="text-[11px] text-[var(--kh-text-muted)]">
-                  You are: <span className="font-semibold">{username}</span>{" "}
-                  {user?.email ? (
-                    <span className="ml-2 text-[10px] text-[var(--kh-text-muted)]">
-                      ({user.email})
+        {/* Messages Container */}
+        <div className="mt-3 flex-1 overflow-y-auto rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-3 space-y-3">
+          {loadingChat ? (
+            <p className="text-xs text-[var(--kh-text-secondary)] text-center mt-4">Loading chat…</p>
+          ) : messages.length === 0 ? (
+            <p className="text-xs text-[var(--kh-text-secondary)] text-center mt-4">No messages yet. Say hi! 👋</p>
+          ) : (
+            messages.map((m) => {
+              const mine = user?.uid === m.uid;
+              return (
+                <div key={m.id} className={`rounded-2xl border px-3 py-2 ${mine ? "bg-[var(--kh-yellow-soft)] ml-4" : "bg-[var(--kh-bg-card)] mr-4"}`}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold text-[var(--kh-text)]">{m.username}</p>
+                    <span className="text-[9px] text-[var(--kh-text-muted)]">
+                      {m.createdAt?.toDate ? m.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ""}
                     </span>
-                  ) : null}
-                </p>
-                <p className="text-[10px] text-[var(--kh-text-muted)] italic">
-                  💬 Messages auto-delete after 10 minutes
-                </p>
-              </div>
-            </div>
-
-            {isAdmin && (
-              <button
-                onClick={trimChatTo100}
-                disabled={trimming}
-                className="rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-1 text-[10px] text-[var(--kh-text-secondary)] hover:bg-[var(--kh-bg-card)] disabled:opacity-60"
-                title="Delete oldest messages so only last 100 remain"
-              >
-                {trimming ? "Trimming…" : "Trim to 100"}
-              </button>
-            )}
-          </div>
-
-          {/* Messages */}
-          <div className="mt-3 flex-1 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] flex flex-col">
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {loadingChat && (
-                <p className="text-xs text-[var(--kh-text-secondary)]">
-                  Loading chat…
-                </p>
-              )}
-
-              {!loadingChat && messages.length === 0 && (
-                <p className="text-xs text-[var(--kh-text-secondary)]">
-                  Walang chat pa. Be the first to say hi 👋
-                </p>
-              )}
-
-              {messages.map((m) => {
-                const mine = user?.uid && m.uid === user.uid;
-                const bubble = mine
-                  ? "bg-[var(--kh-yellow-soft)] border-[var(--kh-border)]"
-                  : "bg-[var(--kh-bg-card)] border-[var(--kh-border)]";
-
-                const sticker = m.stickerId
-                  ? stickerMap.get(m.stickerId)
-                  : null;
-
-                return (
-                  <div
-                    key={m.id}
-                    className={`rounded-2xl border px-3 py-2 ${bubble}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <p className="text-[11px] font-semibold text-[var(--kh-text)]">
-                        {m.username || "Kabayan"}
-                        {mine && (
-                          <span className="ml-2 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                            you
-                          </span>
-                        )}
-                      </p>
-                      <span className="text-[10px] text-[var(--kh-text-muted)]">
-                        {m.createdAt?.toDate
-                          ? m.createdAt
-                              .toDate()
-                              .toLocaleTimeString([], {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              })
-                          : ""}
-                      </span>
-                    </div>
-
-                    {m.type === "text" && (
-                      <p className="mt-1 text-sm text-[var(--kh-text)] whitespace-pre-wrap break-words">
-                        {m.text}
-                      </p>
-                    )}
-
-                    {m.type === "sticker" && (
-                      <div className="mt-2">
-                        {sticker ? (
-                          <div className="inline-flex items-center gap-2 rounded-xl bg-[var(--kh-bg)]/40 px-2 py-2">
-                            <img
-                              src={sticker.imageUrl}
-                              alt={sticker.name}
-                              className="h-12 w-12 rounded-xl object-cover"
-                            />
-                            <span className="text-xs text-[var(--kh-text-secondary)]">
-                              {sticker.name}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-xs text-[var(--kh-text-secondary)]">
-                            Sticker sent 🎉
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
-                );
-              })}
+                  {m.type === "text" ? (
+                    <p className="text-sm text-[var(--kh-text)] mt-1 break-words">{m.text}</p>
+                  ) : (
+                    <div className="mt-2">
+                      <img src={stickerMap.get(m.stickerId)?.imageUrl} className="h-12 w-12 rounded-lg object-cover" alt="sticker" />
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          )}
+          <div ref={bottomRef} />
+        </div>
 
-              <div ref={bottomRef} />
-            </div>
+        {/* Chat Input & Sticker Tray */}
+        <div className="mt-3 space-y-3">
+          <div className="flex gap-2">
+            <input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              placeholder={user ? "Type a message..." : "Login to chat"}
+              disabled={!user}
+              onKeyDown={(e) => e.key === "Enter" && sendText()}
+              className="flex-1 rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm"
+            />
+            <button 
+              onClick={sendText} 
+              disabled={!user || sending}
+              className="rounded-xl bg-[var(--kh-blue)] px-4 py-2 text-sm font-bold text-white disabled:opacity-50"
+            >
+              Send
+            </button>
           </div>
 
-          {/* Input + stickers */}
-          <div className="mt-3 space-y-2">
-            <div className="flex gap-2">
-              <input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                placeholder={
-                  user ? "Type a message..." : "Log in to chat…"
-                }
-                disabled={!user || sending}
-                maxLength={220}
-                className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)] disabled:opacity-60"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    sendText();
-                  }
-                }}
-              />
-              <button
-                onClick={sendText}
-                disabled={!user || sending}
-                className="rounded-xl bg-[var(--kh-blue)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--kh-card-shadow)] hover:brightness-110 disabled:opacity-60"
-              >
-                Send
-              </button>
-            </div>
-
-            <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-3">
-              <div className="flex items-center justify-between">
-                <p className="text-[11px] font-semibold text-[var(--kh-text)]">
-                  Stickers
-                </p>
-                <span className="text-[10px] text-[var(--kh-text-muted)]">
-                  {stickers.length} available
-                </span>
-              </div>
-
-              {stickers.length === 0 ? (
-                <p className="mt-2 text-xs text-[var(--kh-text-secondary)]">
-                  No stickers yet.
-                </p>
-              ) : (
-                <div className="mt-2 grid grid-cols-6 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                  {stickers.map((s) => (
-                    <button
-                      key={s.id}
-                      disabled={!user || sending}
-                      onClick={() => sendSticker(s.id)}
-                      className="group rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-1 hover:bg-[var(--kh-bg)] disabled:opacity-60"
-                      title={s.name}
-                    >
-                      <img
-                        src={s.imageUrl}
-                        alt={s.name}
-                        className="h-10 w-10 rounded-lg object-cover transition group-hover:scale-[1.03]"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
+          {/* Sticker Tray */}
+          <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-3">
+            <p className="text-[10px] font-bold text-[var(--kh-text-muted)] uppercase mb-2">Stickers</p>
+            <div className="grid grid-cols-6 gap-2">
+              {stickers.map((s) => (
+                <button 
+                  key={s.id} 
+                  onClick={() => sendSticker(s.id)}
+                  disabled={!user}
+                  className="hover:scale-110 transition-transform disabled:opacity-50"
+                >
+                  <img src={s.imageUrl} className="h-10 w-10 rounded-lg object-cover shadow-sm" alt={s.name} />
+                </button>
+              ))}
             </div>
           </div>
         </div>
-      </section>
-    </div>
-  );
+      </div>
+    </section>
+  </div>
+);
 }
