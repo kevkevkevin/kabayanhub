@@ -857,7 +857,9 @@ export default function TambayanPage() {
                     <p className="text-sm text-[var(--kh-text)] mt-1 break-words">{m.text}</p>
                   ) : (
                     <div className="mt-2">
-                      <img src={stickerMap.get(m.stickerId)?.imageUrl} className="h-12 w-12 rounded-lg object-cover" alt="sticker" />
+                      {m.stickerId && stickerMap.get(m.stickerId) && (
+                        <img src={stickerMap.get(m.stickerId)!.imageUrl} className="h-12 w-12 rounded-lg object-cover" alt="sticker" />
+                      )}
                     </div>
                   )}
                 </div>
