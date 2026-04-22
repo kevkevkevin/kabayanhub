@@ -16,9 +16,11 @@ export default function TopNavClient() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isLearnOpen, setIsLearnOpen] = useState(false);
   const [isToolsOpen, setIsToolsOpen] = useState(false);
+  const [isMarketOpen, setIsMarketOpen] = useState(false);
 
   const learnRef = useRef<HTMLDivElement | null>(null);
   const toolsRef = useRef<HTMLDivElement | null>(null);
+  const marketRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => setUser(u));
@@ -38,6 +40,7 @@ export default function TopNavClient() {
       const target = e.target as Node;
       if (learnRef.current && !learnRef.current.contains(target)) setIsLearnOpen(false);
       if (toolsRef.current && !toolsRef.current.contains(target)) setIsToolsOpen(false);
+      if (marketRef.current && !marketRef.current.contains(target)) setIsMarketOpen(false);
     };
     document.addEventListener("mousedown", onClick);
     return () => document.removeEventListener("mousedown", onClick);
@@ -67,6 +70,7 @@ export default function TopNavClient() {
     setIsMobileMenuOpen(false);
     setIsLearnOpen(false);
     setIsToolsOpen(false);
+    setIsMarketOpen(false);
   };
 
   // Shared Styles
@@ -124,7 +128,20 @@ export default function TopNavClient() {
               )}
             </div>
 
-            <Link href="/marketplace" className={navItemClasses}>Market</Link>
+            <div className="relative" ref={marketRef}>
+              <button
+                onClick={() => { setIsMarketOpen(!isMarketOpen); setIsLearnOpen(false); setIsToolsOpen(false); }}
+                className={`${navItemClasses} flex items-center gap-1`}
+              >
+                Market <span className="text-[10px] opacity-50">▾</span>
+              </button>
+              {isMarketOpen && (
+                <div className="absolute left-0 mt-4 w-48 overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-xl">
+                  <Link href="/marketplace" onClick={closeAllMenus} className={dropdownItemClasses}>🛒 Marketplace</Link>
+                  <Link href="/market/jobs" onClick={closeAllMenus} className={dropdownItemClasses}>💼 Job Board</Link>
+                </div>
+              )}
+            </div>
             <Link href="/tambayan" className={navItemClasses}>Tambayan</Link>
           </nav>
 
@@ -181,6 +198,7 @@ export default function TopNavClient() {
             <Link href="/videos" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">🎥 Videos</Link>
             <Link href="/arabic-quiz" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">🟢 Arabic Quiz</Link>
             <Link href="/marketplace" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">Marketplace</Link>
+            <Link href="/market/jobs" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">💼 Job Board</Link>
             <Link href="/tambayan" onClick={closeAllMenus} className="px-4 py-2.5 rounded-xl hover:bg-[var(--kh-bg-subtle)] text-sm">Tambayan</Link>
             <div className="my-2 border-t border-[var(--kh-border)]" />
             <Link href="/dashboard" onClick={closeAllMenus} className="flex justify-center rounded-xl bg-[var(--kh-yellow)] p-3 text-sm font-bold text-slate-900">My Stats</Link>

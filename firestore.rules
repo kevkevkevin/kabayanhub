@@ -1,0 +1,186 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ───────── helpers ───────── */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // Block links (http, https, www, .com, .net, .org, etc.)
+    function hasLink(txt) {
+      return txt.matches('(?i).*\\b(http|https)://.*') ||
+             txt.matches('(?i).*\\bwww\\..*') ||
+             txt.matches('(?i).*\\b[^\\s]+\\.(com|net|org|io|app|co|me|sa|ph)\\b.*');
+    }
+
+    function isValidChatCreate() {
+      return request.resource.data.keys().hasAll(['uid','username','type','createdAt']) &&
+        request.resource.data.uid == request.auth.uid &&
+        (request.resource.data.type == "text" || request.resource.data.type == "sticker") &&
+        request.resource.data.username is string &&
+        request.resource.data.username.size() >= 2 &&
+        request.resource.data.username.size() <= 24 &&
+        request.resource.data.createdAt is timestamp &&
+        (
+          (request.resource.data.type == "text" &&
+            request.resource.data.text is string &&
+            request.resource.data.text.size() >= 1 &&
+            request.resource.data.text.size() <= 220 &&
+            !hasLink(request.resource.data.text) &&
+            (!('stickerId' in request.resource.data) || request.resource.data.stickerId == null)
+          )
+          ||
+          (request.resource.data.type == "sticker" &&
+            request.resource.data.stickerId is string &&
+            request.resource.data.stickerId.size() >= 1 &&
+            request.resource.data.stickerId.size() <= 64 &&
+            (!('text' in request.resource.data) || request.resource.data.text == null)
+          )
+        );
+    }
+
+    /* ───────── users ───────── */
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/activity/{docId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/budgetEntries/{docId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/calorieEntries/{docId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    /* ───────── news ───────── */
+    match /news/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    /* ───────── videos ───────── */
+    match /videos/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    /* ───────── marketplace items (KP rewards marketplace) ───────── */
+    match /marketplaceItems/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    match /marketplacePurchases/{id} {
+      allow create: if isSignedIn() &&
+        request.resource.data.userId == request.auth.uid;
+
+      allow read: if isAdmin() ||
+        (isSignedIn() && request.auth.uid == resource.data.userId);
+
+      allow update, delete: if isAdmin();
+    }
+
+    /* ───────── tambayan stickers ───────── */
+    match /tambayanStickers/{stickerId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /* ───────── tambayan chat ───────── */
+    match /tambayanChat/{messageId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && isValidChatCreate();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    /* ───────── tambayan config ───────── */
+    match /tambayanConfig/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    match /tambayanLive/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    /* ───────── moments ───────── */
+    match /moments/{momentId} {
+      allow read: if true;
+
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasAll(['uid','username','text','createdAt','expiresAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.username is string
+        && request.resource.data.username.size() >= 2
+        && request.resource.data.username.size() <= 24
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 220
+        && !hasLink(request.resource.data.text)
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.expiresAt is timestamp;
+
+      allow update: if false;
+      allow delete: if isAdmin() || (isSignedIn() && request.auth.uid == resource.data.uid);
+    }
+
+    /* ───────── Kabayan Market (public market) ───────── */
+
+    // Restaurants
+    match /marketRestaurants/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Supermarkets
+    match /marketSupermarkets/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ✅ Products (ONE SOURCE OF TRUTH)
+    // Use this for admin + public product list
+    match /marketProducts/{id} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /* ───────── Job Board ───────── */
+
+    // Jobs - admin can manage, all authenticated users can read
+    match /jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Job Applications - users can manage their own, admins can read/update all
+    match /jobApplications/{applicationId} {
+      allow create: if isSignedIn() &&
+        request.resource.data.uid == request.auth.uid;
+
+      allow read: if isAdmin() ||
+        (isSignedIn() && request.auth.uid == resource.data.uid);
+
+      allow update, delete: if isAdmin();
+    }
+
+    match /arabicWordRushConfig/{weekId} {
+      allow read: if true;          // public can play
+      allow create, update, delete: if isAdmin(); // admin updates weekly
+    }
+
+  }
+}

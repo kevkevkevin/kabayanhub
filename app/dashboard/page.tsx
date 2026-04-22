@@ -49,6 +49,14 @@ type RedeemedItem = {
   createdAt?: any;
 };
 
+type JobWorking = {
+  id: string;
+  jobId: string;
+  jobTitle: string;
+  status: "pending" | "reviewed" | "accepted" | "rejected";
+  appliedAt: any;
+};
+
 // --- CONSTANTS ---
 const RANKS: RankInfo[] = [
   { title: "Bagong Salta", color: "#64748B", min: 0, max: 100 }, // Slate-500
@@ -132,6 +140,7 @@ export default function DashboardPage() {
   const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const [redeemedItems, setRedeemedItems] = useState<RedeemedItem[]>([]);
+  const [jobsWorking, setJobsWorking] = useState<JobWorking[]>([]);
 
   // UI States
   const [error, setError] = useState<string | null>(null);
@@ -211,6 +220,23 @@ export default function DashboardPage() {
           });
         });
         setRedeemedItems(list);
+
+        // Jobs working on (accepted applications)
+        const jobAppRef = collection(db, "jobApplications");
+        const jobAppQ = query(jobAppRef, where("uid", "==", u.uid), orderBy("appliedAt", "desc"));
+        const jobAppSnap = await getDocs(jobAppQ);
+        const jobsList: JobWorking[] = [];
+        jobAppSnap.forEach((docSnap) => {
+          const d = docSnap.data() as any;
+          jobsList.push({
+            id: docSnap.id,
+            jobId: d.jobId,
+            jobTitle: d.jobTitle || "Unknown Job",
+            status: d.status || "pending",
+            appliedAt: d.appliedAt,
+          });
+        });
+        setJobsWorking(jobsList);
       } catch (err) {
         console.error("Failed to load dashboard:", err);
         setError("Failed to load your Kabayan stats. Please refresh.");
@@ -393,7 +419,7 @@ export default function DashboardPage() {
 
       {/* ───────── STATS & BADGES (Fixed Contrast) ───────── */}
       {/* Light Backgrounds -> DARK Text (Not white text) */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <section className="grid grid-cols-2 md:grid-cols-5 gap-4">
          <div className="p-4 rounded-[1.5rem] bg-blue-50 border border-blue-100 text-center shadow-sm hover:-translate-y-1 transition-transform">
             <div className="text-2xl mb-1">🔥</div>
             <div className="text-lg font-black text-blue-900">{hasCheckedInToday ? "Active" : "Inactive"}</div>
@@ -414,6 +440,68 @@ export default function DashboardPage() {
             <div className="text-lg font-black text-pink-900">{points}</div>
             <div className="text-[10px] text-pink-600 uppercase font-bold tracking-wide">Total KP</div>
          </div>
+         <div className="p-4 rounded-[1.5rem] bg-indigo-50 border border-indigo-100 text-center shadow-sm hover:-translate-y-1 transition-transform">
+            <div className="text-2xl mb-1">💼</div>
+            <div className="text-lg font-black text-indigo-900">{jobsWorking.length}</div>
+            <div className="text-[10px] text-indigo-600 uppercase font-bold tracking-wide">Jobs Applied</div>
+         </div>
+      </section>
+
+      {/* ───────── JOBS I'M WORKING ON ───────── */}
+      <section className="rounded-[2rem] border border-slate-100 bg-white p-6 shadow-lg shadow-slate-200/40">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <span className="bg-blue-100 text-blue-700 p-2.5 rounded-xl text-xl">💼</span>
+            <div>
+              <h2 className="font-bold text-lg text-slate-800">My Jobs</h2>
+              <p className="text-xs text-slate-500 font-medium mt-0.5">{jobsWorking.length} {jobsWorking.length === 1 ? 'position' : 'positions'}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-3">
+          {jobsWorking.length === 0 ? (
+            <div className="text-center py-10 rounded-2xl border-2 border-dashed border-slate-100">
+              <p className="text-xs text-slate-400 font-medium">No job applications yet.</p>
+              <button onClick={() => router.push('/market/jobs')} className="mt-2 text-xs font-bold text-blue-600 hover:underline">
+                Browse Jobs
+              </button>
+            </div>
+          ) : (
+            jobsWorking.map((job) => {
+              const statusColors = {
+                pending: "bg-yellow-100 text-yellow-700",
+                reviewed: "bg-blue-100 text-blue-700",
+                accepted: "bg-green-100 text-green-700",
+                rejected: "bg-red-100 text-red-700",
+              };
+
+              const statusLabels = {
+                pending: "Pending",
+                reviewed: "Reviewed",
+                accepted: "Accepted",
+                rejected: "Rejected",
+              };
+
+              return (
+                <div
+                  key={job.id}
+                  className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex-1">
+                    <h3 className="font-bold text-slate-800 text-sm">{job.jobTitle}</h3>
+                    <p className="text-xs text-slate-400 font-medium mt-1">
+                      Applied: {job.appliedAt?.toDate?.().toLocaleDateString()}
+                    </p>
+                  </div>
+                  <span className={`text-xs font-bold px-3 py-1.5 rounded-lg whitespace-nowrap ml-3 ${statusColors[job.status as keyof typeof statusColors]}`}>
+                    {statusLabels[job.status as keyof typeof statusLabels]}
+                  </span>
+                </div>
+              );
+            })
+          )}
+        </div>
       </section>
 
       {/* ───────── LEADERBOARD & REDEEMED ───────── */}
