@@ -3,13 +3,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import {
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  Timestamp,
-} from "firebase/firestore";
+import { collection, getDocs, Timestamp } from "firebase/firestore";
 import { db } from "../../lib/firebase";
 
 type NewsDoc = {
@@ -46,6 +40,19 @@ function formatDate(value: any) {
   }
 }
 
+function getCreatedAtMs(value: any) {
+  try {
+    if (!value) return 0;
+    if (value instanceof Date) return value.getTime();
+    if (value instanceof Timestamp) return value.toDate().getTime();
+    if (typeof value?.toDate === "function") return value.toDate().getTime();
+    if (typeof value === "string") return new Date(value).getTime();
+  } catch {
+    // fall back to zero
+  }
+  return 0;
+}
+
 export default function NewsPage() {
   const [items, setItems] = useState<NewsDoc[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,15 +60,24 @@ export default function NewsPage() {
 
   useEffect(() => {
     let mounted = true;
+    let timeoutId: number | undefined;
 
     async function load() {
       setLoading(true);
       setErr(null);
 
+      if (typeof window !== "undefined") {
+        timeoutId = window.setTimeout(() => {
+          if (mounted) {
+            setErr("News is taking longer than expected. Please refresh.");
+            setLoading(false);
+          }
+        }, 12000);
+      }
+
       try {
         const ref = collection(db, "news");
-        const q = query(ref, orderBy("createdAt", "desc"));
-        const snap = await getDocs(q);
+        const snap = await getDocs(ref);
 
         const list: NewsDoc[] = [];
         snap.forEach((docSnap) => {
@@ -78,11 +94,14 @@ export default function NewsPage() {
           });
         });
 
+        list.sort((a, b) => getCreatedAtMs(b.createdAt) - getCreatedAtMs(a.createdAt));
+
         if (mounted) setItems(list);
       } catch (e) {
         console.error(e);
         if (mounted) setErr("Failed to load news. Please refresh.");
       } finally {
+        if (timeoutId) window.clearTimeout(timeoutId);
         if (mounted) setLoading(false);
       }
     }
@@ -90,6 +109,7 @@ export default function NewsPage() {
     load();
     return () => {
       mounted = false;
+      if (timeoutId) window.clearTimeout(timeoutId);
     };
   }, []);
 
@@ -124,10 +144,10 @@ export default function NewsPage() {
         </div>
       )}
 
-      {!loading && items.length === 0 && (
+      {!loading && !err && items.length === 0 && (
         <div className="kh-card">
           <p className="text-sm text-[var(--kh-text-secondary)]">
-            No news posts yet. Add some docs in your <code>news</code> collection.
+            No updates just yet. Check back soon for news from your Kabayan community.
           </p>
         </div>
       )}
@@ -138,7 +158,7 @@ export default function NewsPage() {
           href={`/news/${featured.id}`}
           className="group block overflow-hidden rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-[var(--kh-card-shadow)] transition hover:-translate-y-0.5 hover:shadow-xl"
         >
-          <div className="grid md:grid-cols-[1.1fr,0.9fr]">
+          <div className="grid md:grid-cols-[1.1fr_0.9fr]">
             <div className="relative min-h-[220px] md:min-h-[320px]">
               <div
                 className="absolute inset-0 bg-cover bg-center"

@@ -197,7 +197,7 @@ export default function MarketRestaurantsPage() {
           </span>
 
           <Link
-            href="/market"
+            href="/marketplace"
             className="font-semibold text-[var(--kh-blue)] underline-offset-2 hover:underline"
           >
             ← Back to Kabayan Market

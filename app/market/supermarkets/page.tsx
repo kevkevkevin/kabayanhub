@@ -149,7 +149,7 @@ export default function SupermarketsPage() {
           </div>
 
           <Link
-            href="/market"
+            href="/marketplace"
             className="rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-4 py-2 text-xs font-semibold text-[var(--kh-text-secondary)] hover:brightness-105"
           >
             ← Back to Market
@@ -157,7 +157,7 @@ export default function SupermarketsPage() {
         </div>
 
         {/* Filters */}
-        <div className="mt-4 grid gap-2 md:grid-cols-[220px,1fr,220px]">
+        <div className="mt-4 grid gap-3 lg:grid-cols-[180px_minmax(0,1fr)_180px]">
           <select
             value={city}
             onChange={(e) => setCity(e.target.value)}

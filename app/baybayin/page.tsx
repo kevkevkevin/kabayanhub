@@ -280,8 +280,8 @@ export default function BaybayinPage() {
 
         {/* Output */}
         <div className="kh-card card-hover">
-          <div className="flex items-start justify-between gap-2 baybayin-text">
-            <div className="baybayin-text">
+          <div className="flex items-start justify-between gap-2">
+            <div>
               <h2 className="text-sm font-semibold text-[var(--kh-text)]">
                 Baybayin output
               </h2>
@@ -299,7 +299,7 @@ export default function BaybayinPage() {
             </button>
           </div>
 
-          <div className="mt-3 rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-4 baybayin-text">
+          <div className="mt-3 rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-4">
             <p className="text-2xl md:text-3xl leading-relaxed text-[var(--kh-text)] baybayin-text">
               {output || "—"}
             </p>
@@ -314,11 +314,6 @@ export default function BaybayinPage() {
             </p>
           </div>
         </div>
-        <pre className="text-[11px] text-[var(--kh-text-muted)] mt-2">
-        {Array.from(output || "")
-            .map((c) => `U+${c.codePointAt(0)?.toString(16).toUpperCase()}`)
-            .join(" ")}
-        </pre>
       </section>
     </div>
   );

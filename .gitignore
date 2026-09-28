@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+/.kabayan-preview/
+/.kabayan-build/
 
 # production
 /build

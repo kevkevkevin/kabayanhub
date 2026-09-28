@@ -748,7 +748,7 @@ export default function AdminPage() {
 
       {/* NEWS TAB */}
       {activeTab === "news" && (
-        <section className="grid gap-4 md:grid-cols-[1.1fr,1fr]">
+        <section className="grid gap-4 md:grid-cols-[1.1fr_1fr]">
           {/* Form */}
           <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
             <div className="mb-3 flex items-center justify-between">
@@ -936,7 +936,7 @@ Starting this month, OFWs must ensure:
 
       {/* VIDEOS TAB */}
       {activeTab === "videos" && (
-        <section className="grid gap-4 md:grid-cols-[1.1fr,1fr]">
+        <section className="grid gap-4 md:grid-cols-[1.1fr_1fr]">
           {/* Form */}
           <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
             <div className="mb-3 flex items-center justify-between">
@@ -1140,7 +1140,7 @@ Starting this month, OFWs must ensure:
 
       {/* MARKETPLACE TAB */}
       {activeTab === "marketplace" && (
-        <section className="grid gap-4 md:grid-cols-[1.1fr,1fr]">
+        <section className="grid gap-4 md:grid-cols-[1.1fr_1fr]">
           {/* Form */}
           <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)]">
             <div className="mb-3 flex items-center justify-between">
@@ -1310,7 +1310,7 @@ Starting this month, OFWs must ensure:
 
       {/* PURCHASES TAB */}
       {activeTab === "purchases" && (
-        <section className="grid gap-4 md:grid-cols-[1.1fr,1fr]">
+        <section className="grid gap-4 md:grid-cols-[1.1fr_1fr]">
           {/* Grouped by product */}
           <div className="rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-4 shadow-[var(--kh-card-shadow)] text-xs">
             <h2 className="mb-2 text-sm font-semibold text-[var(--kh-text)]">

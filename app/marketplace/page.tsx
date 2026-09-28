@@ -3,6 +3,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   collection,
   doc,
@@ -201,8 +202,9 @@ export default function MarketplacePage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <header className="space-y-2">
+        <p className="kh-eyebrow">A LITTLE SOMETHING FOR YOUR EVERYDAY</p>
         <h1 className="text-2xl font-semibold text-[var(--kh-text)]">
-          Kabayan Marketplace
+          Your points. Your possibilities.
         </h1>
         <p className="text-sm text-[var(--kh-text-secondary)]">
           Use your Kabayan Points to redeem digital perks, tools, and future
@@ -218,6 +220,11 @@ export default function MarketplacePage() {
           </div>
         )}
       </header>
+      <nav className="kh-market-links" aria-label="Explore the market">
+        <Link href="/market/jobs">Find a job <span aria-hidden="true">↗</span></Link>
+        <Link href="/market/restaurants">Pinoy restaurants <span aria-hidden="true">↗</span></Link>
+        <Link href="/market/supermarkets">Supermarkets <span aria-hidden="true">↗</span></Link>
+      </nav>
 
       {status && (
         <p className="text-[11px] text-emerald-600 md:text-xs">{status}</p>
@@ -231,7 +238,7 @@ export default function MarketplacePage() {
 
       {!loading && items.length === 0 && (
         <p className="text-sm text-[var(--kh-text-secondary)]">
-          No marketplace items yet. Add some items from the admin panel.
+          New rewards are on their way. Check back soon to see what’s available.
         </p>
       )}
 

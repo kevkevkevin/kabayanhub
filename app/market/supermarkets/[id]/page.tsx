@@ -145,7 +145,7 @@ export default function SupermarketDetailPage() {
         <>
           {/* Hero */}
           <section className="kh-card card-hover overflow-hidden">
-            <div className="grid gap-4 md:grid-cols-[1.2fr,0.8fr]">
+            <div className="grid gap-4 md:grid-cols-[1.2fr_0.8fr]">
               <div>
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="rounded-full bg-[var(--kh-blue-soft)]/50 px-3 py-1 text-[10px] font-semibold text-[var(--kh-blue)]">

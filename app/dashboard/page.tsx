@@ -307,11 +307,11 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6 pb-20 pt-4">
+    <div className="kh-dashboard space-y-6 pb-8">
       
       {/* ───────── HEADER SECTION ───────── */}
       {/* Strong dark blue gradient for header only. White text. */}
-      <section className="relative overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-blue-900 to-indigo-900 p-6 md:p-8 text-white shadow-2xl">
+      <section className="kh-dashboard-banner relative overflow-hidden rounded-2xl p-6 md:p-8 text-white">
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
            <div className="flex items-center gap-5">
               <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-3xl font-bold shadow-inner">
@@ -377,7 +377,7 @@ export default function DashboardPage() {
                {/* Progress Bar background needs to be light grey, not dark */}
                <div className="h-4 w-full rounded-full bg-slate-100 overflow-hidden inner-shadow">
                   <div 
-                    className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all duration-1000 ease-out"
+                    className="h-full bg-[var(--kh-blue)] transition-all duration-700 ease-out"
                     style={{ width: `${rank.progress}%` }}
                   />
                </div>
@@ -390,7 +390,7 @@ export default function DashboardPage() {
 
         {/* Right: DAILY CHECK-IN (Colored Card / White Text) */}
         {/* Use a vibrant gradient background here to make it stand out as a button */}
-        <div className="group relative md:col-span-5 flex flex-col justify-center items-center text-center rounded-[2rem] bg-gradient-to-br from-emerald-500 to-teal-600 p-6 shadow-xl shadow-emerald-500/20 overflow-hidden">
+        <div className="kh-checkin-card group relative md:col-span-5 flex flex-col justify-center items-center text-center rounded-2xl p-6 overflow-hidden">
            {/* Decorative circles */}
            <div className="absolute top-0 right-0 -mr-8 -mt-8 h-32 w-32 rounded-full bg-white/10 blur-2xl"></div>
            

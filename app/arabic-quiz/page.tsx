@@ -364,7 +364,7 @@ export default function ArabicQuizPage() {
       )}
 
       {/* Layout: quiz on left, summary on right */}
-      <section className="grid gap-4 md:grid-cols-[1.2fr,0.9fr]">
+      <section className="grid gap-4 md:grid-cols-[1.2fr_0.9fr]">
         {/* Quiz card */}
         <div className="kh-card card-hover">
           <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">

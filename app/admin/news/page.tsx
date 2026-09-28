@@ -401,7 +401,7 @@ export default function AdminNewsPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-[1.2fr,0.8fr,0.8fr]">
+          <div className="grid gap-3 md:grid-cols-[1.2fr_0.8fr_0.8fr]">
             <div className="space-y-1">
               <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
                 Cover image URL (optional)

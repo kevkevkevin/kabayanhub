@@ -599,7 +599,7 @@ export default function TambayanPage() {
         Tambayan Live 🎥💬
       </h1>
       <p className="max-w-2xl text-sm text-[var(--kh-text-secondary)]">
-        Watch the live stream on the left, then chika on the right.
+        A little kwento, a familiar face. Watch, chat, and feel right at home.
       </p>
     </header>
 
@@ -624,13 +624,14 @@ export default function TambayanPage() {
             {stream.title || "Tambayan Live"}
           </h2>
           <p className="text-[11px] text-[var(--kh-text-muted)]">
-            Admin sets the live link. Works with YouTube watch links too.
+            Pull up a seat and watch together with the community.
           </p>
         </div>
 
         <div className="overflow-hidden rounded-2xl border border-[var(--kh-border)] bg-black">
           {embedUrl ? (
             <iframe
+              title="Kabayan Tambayan live stream"
               src={embedUrl}
               className="aspect-video w-full"
               allow="autoplay; encrypted-media; picture-in-picture"

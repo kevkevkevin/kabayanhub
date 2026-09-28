@@ -7,6 +7,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth, db } from "../../lib/firebase";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import Link from "next/link";
+import AuthAside from "../components/AuthAside";
 
 export default function SignupPage() {
   const router = useRouter();
@@ -64,12 +65,13 @@ export default function SignupPage() {
       });
 
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Signup failed:", err);
       let msg = "Failed to sign up. Please try again.";
-      if (err?.code === "auth/email-already-in-use") {
+      const code = (err as { code?: string })?.code;
+      if (code === "auth/email-already-in-use") {
         msg = "This email is already registered. Try logging in instead.";
-      } else if (err?.code === "auth/weak-password") {
+      } else if (code === "auth/weak-password") {
         msg = "Password is too weak. Please use at least 6 characters.";
       }
       setError(msg);
@@ -79,12 +81,11 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-72px)] items-center justify-center">
-      <div className="w-full max-w-md rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-6 shadow-[var(--kh-card-shadow)] md:p-8">
-        <div className="mb-5 space-y-2 text-center">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--kh-yellow)] text-xs font-black text-slate-900">
-            KH
-          </div>
+    <div className="kh-auth-layout">
+      <AuthAside />
+      <div className="kh-auth-form">
+        <div className="mb-7 space-y-2">
+          <p className="kh-eyebrow">THERE’S A PLACE FOR YOU HERE</p>
           <h1 className="text-xl font-semibold text-[var(--kh-text)]">
             Join Kabayan Hub
           </h1>
@@ -95,7 +96,7 @@ export default function SignupPage() {
         </div>
 
         {error && (
-          <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <p role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
           </p>
         )}
@@ -103,10 +104,12 @@ export default function SignupPage() {
         <form onSubmit={handleSubmit} className="space-y-4 text-sm">
           {/* Name (optional) */}
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+            <label htmlFor="signup-name" className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Name (optional)
             </label>
             <input
+              id="signup-name"
+              autoComplete="name"
               type="text"
               className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
               placeholder="Juan Dela Cruz"
@@ -117,10 +120,12 @@ export default function SignupPage() {
 
           {/* Username */}
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+            <label htmlFor="signup-username" className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Username
             </label>
             <input
+              id="signup-username"
+              autoComplete="username"
               type="text"
               required
               minLength={3}
@@ -138,10 +143,11 @@ export default function SignupPage() {
 
           {/* Email */}
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+            <label htmlFor="signup-email" className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Email
             </label>
             <input
+              id="signup-email"
               type="email"
               className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
               placeholder="you@example.com"
@@ -154,10 +160,12 @@ export default function SignupPage() {
 
           {/* Password */}
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+            <label htmlFor="signup-password" className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Password
             </label>
             <input
+              id="signup-password"
+              minLength={6}
               type="password"
               className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
               placeholder="At least 6 characters"

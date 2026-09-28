@@ -304,7 +304,7 @@ export default function AdminSupermarketsPage() {
           </button>
         </div>
 
-        <div className="mt-4 grid gap-2 md:grid-cols-[1fr,220px]">
+        <div className="mt-4 grid gap-2 md:grid-cols-[1fr_220px]">
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}

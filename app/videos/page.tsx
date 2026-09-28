@@ -285,8 +285,9 @@ export default function VideosPage() {
   return (
     <div className="space-y-6 md:space-y-8">
       <header className="space-y-2">
+        <p className="kh-eyebrow">MAKE ROOM FOR SOMETHING NEW</p>
         <h1 className="text-2xl font-semibold text-[var(--kh-text)]">
-          Learn &amp; Tutorials
+          Small lessons. Bigger possibilities.
         </h1>
         <p className="text-sm text-[var(--kh-text-secondary)]">
           Short, practical videos about earning online, managing money, and

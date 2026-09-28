@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../lib/firebase";
 import Link from "next/link";
+import AuthAside from "../components/AuthAside";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -28,10 +29,10 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       router.push("/dashboard");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Login failed:", err);
       setError(
-        err?.code === "auth/invalid-credential"
+        (err as { code?: string })?.code === "auth/invalid-credential"
           ? "Invalid email or password."
           : "Failed to log in. Please try again."
       );
@@ -41,12 +42,11 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-72px)] items-center justify-center">
-      <div className="w-full max-w-md rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] p-6 shadow-[var(--kh-card-shadow)] md:p-8">
-        <div className="mb-5 space-y-2 text-center">
-          <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--kh-yellow)] text-xs font-black text-slate-900">
-            KH
-          </div>
+    <div className="kh-auth-layout">
+      <AuthAside />
+      <div className="kh-auth-form">
+        <div className="mb-7 space-y-2">
+          <p className="kh-eyebrow">YOUR COMMUNITY IS WAITING</p>
           <h1 className="text-xl font-semibold text-[var(--kh-text)]">
             Welcome back, Kabayan
           </h1>
@@ -57,17 +57,19 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <p className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <p role="alert" className="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
           </p>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4 text-sm">
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+            <label htmlFor="login-email" className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Email
             </label>
             <input
+              id="login-email"
+              required
               type="email"
               className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
               placeholder="you@example.com"
@@ -78,10 +80,12 @@ export default function LoginPage() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
+            <label htmlFor="login-password" className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
               Password
             </label>
             <input
+              id="login-password"
+              required
               type="password"
               className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
               placeholder="••••••••"

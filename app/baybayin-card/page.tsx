@@ -97,7 +97,7 @@ export default function BaybayinCardPage() {
         </p>
       </header>
 
-      <section className="grid gap-4 md:grid-cols-[1fr,1.2fr]">
+      <section className="grid gap-4 md:grid-cols-[1fr_1.2fr]">
         {/* Controls */}
         <div className="kh-card card-hover space-y-4">
           <div className="space-y-1">

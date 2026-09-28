@@ -217,7 +217,7 @@ export default function TambayanMoments() {
   const emptyState = useMemo(() => !loading && moments.length === 0, [loading, moments]);
 
   return (
-    <div className="grid gap-4 md:grid-cols-[0.95fr,1.05fr]">
+    <div className="grid gap-4 md:grid-cols-[0.95fr_1.05fr]">
       {/* Post card */}
       <div className="kh-card card-hover">
         <div className="flex items-start justify-between gap-3">

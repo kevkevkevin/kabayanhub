@@ -2,6 +2,10 @@
 import "./globals.css";
 import TopNavClient from "./components/TopNavClient";
 import { baybayinFont } from "./fonts";
+import Link from "next/link";
+import Image from "next/image";
+import Icon from "./components/Icon";
+import Script from "next/script";
 
 export const metadata = {
   title: "Kabayan Hub",
@@ -19,12 +23,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`kh-light ${baybayinFont.variable}`}>
+    <html lang="en" suppressHydrationWarning className={`kh-light ${baybayinFont.variable}`}>
       <head>
         {/* Set theme BEFORE hydration to prevent mismatch */}
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1065176831395240"
-     crossOrigin="anonymous"></script>
         <script
+          id="kabayan-theme"
           dangerouslySetInnerHTML={{
             __html: `
           (function () {
@@ -40,34 +43,31 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen bg-[var(--kh-bg)] text-[var(--kh-text)] antialiased">
-        {/* Background orbits / glow */}
-        <div className="pointer-events-none fixed inset-0 -z-10 overflow-hidden">
-          <div className="absolute -left-24 top-[-80px] h-64 w-64 rounded-full bg-[rgba(37,99,235,0.16)] blur-3xl" />
-          <div className="absolute right-[-40px] top-32 h-72 w-72 rounded-full bg-[rgba(234,179,8,0.14)] blur-3xl" />
-          <div className="absolute left-1/2 bottom-[-120px] h-80 w-80 -translate-x-1/2 rounded-full bg-[rgba(239,68,68,0.14)] blur-3xl" />
-        </div>
-
-        <div className="flex min-h-screen flex-col">
+        <Script id="kabayan-adsense" strategy="afterInteractive" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1065176831395240" crossOrigin="anonymous" />
+        <a href="#main-content" className="kh-skip-link">Skip to content</a>
+        <div className="kh-site">
           <TopNavClient />
 
-          <main className="mx-auto flex-1 w-full max-w-7xl px-4 md:px-6 lg:px-8 pb-14 pt-6 md:pt-10 lg:pt-12">
-            <div className="page-fade space-y-6 md:space-y-8">{children}</div>
+          <main id="main-content" tabIndex={-1} className="kh-main">
+            <div className="kh-page-content page-fade">{children}</div>
           </main>
 
-          <footer className="border-t border-[var(--kh-border)] bg-[var(--kh-blue)]/90">
-            <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 md:px-6 lg:px-8 py-4 text-[11px] text-[var(--kh-bg)] md:flex-row md:items-center md:justify-between">
-              {/* ✅ Avoid hydration issue by NOT using new Date() directly */}
-              <p suppressHydrationWarning>© Kabayan Hub. Built for OFWs.</p>
-
-              <p className="flex items-center gap-1">
-                <span className="inline-flex h-2 w-2 rounded-full bg-[var(--kh-yellow)]" />
-                <span>Created by Kev with 💘.</span>
-              </p>
+          <footer className="kh-footer">
+            <div className="kh-footer-inner">
+              <div className="kh-footer-about">
+                <Link href="/" className="kh-brand" aria-label="Kabayan Hub home"><Image src="/logomain.png" alt="" width={38} height={38} unoptimized /><span>Kabayan<span className="kh-brand-blue">Hub</span><small>YOUR HOME AWAY FROM HOME</small></span></Link>
+                <p>Connecting Filipino hearts and everyday lives in Saudi Arabia. One hub. One Kabayan family.</p>
+              </div>
+              <nav className="kh-footer-links" aria-label="Footer navigation">
+                <div><strong>Explore</strong><Link href="/news">News & updates</Link><Link href="/tambayan">Tambayan</Link><Link href="/market/jobs">Job board</Link></div>
+                <div><strong>For your everyday</strong><Link href="/videos">Learn & tutorials</Link><Link href="/budget">Budget tracker</Link><Link href="/marketplace">Marketplace</Link></div>
+                <div><strong>Your hub</strong><Link href="/dashboard">My dashboard</Link><Link href="/settings">Profile & settings</Link><Link href="/#help-desk">Government portals</Link></div>
+              </nav>
             </div>
+            <div className="kh-footer-bottom"><p>© Kabayan Hub. Built for OFWs.</p><span>Made with <Icon name="heart" width={12} height={12} /> by Kev</span></div>
           </footer>
         </div>
       </body>
     </html>
   );
 }
-

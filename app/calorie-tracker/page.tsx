@@ -276,7 +276,7 @@ export default function CalorieTrackerPage() {
       )}
 
       {/* Summary + Goals */}
-      <section className="grid gap-4 md:grid-cols-[1.2fr,1fr]">
+      <section className="grid gap-4 md:grid-cols-[1.2fr_1fr]">
         {/* Summary */}
         <div className="kh-card card-hover">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -393,7 +393,7 @@ export default function CalorieTrackerPage() {
       </section>
 
       {/* Add entry + Recent */}
-      <section className="grid gap-4 md:grid-cols-[0.95fr,1.05fr]">
+      <section className="grid gap-4 md:grid-cols-[0.95fr_1.05fr]">
         {/* Form */}
         <div className="kh-card card-hover">
           <h2 className="text-sm font-semibold text-[var(--kh-text)]">Add meal</h2>
