@@ -88,7 +88,7 @@ export default function TopNavClient() {
               </div>}
             </div>
           ))}
-          {navLink("Tambayan", "/tambayan")}
+          {navLink("Community", "/community")}
         </nav>
         <div className="kh-nav-actions">
           <button className="kh-icon-button" onClick={toggleTheme} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}><Icon name={dark ? "sun" : "moon"} width={18} height={18} /></button>
@@ -100,7 +100,7 @@ export default function TopNavClient() {
       </div>
       {error && <p className="kh-nav-error" role="alert">{error}</p>}
       {menuOpen && <nav className="kh-mobile-nav" id="mobile-navigation" aria-label="Mobile navigation">
-        <div className="kh-mobile-primary">{navLink("Home", "/")}{navLink("News", "/news")}{navLink("Tambayan", "/tambayan")}{navLink("My dashboard", "/dashboard")}</div>
+        <div className="kh-mobile-primary">{navLink("Home", "/")}{navLink("News", "/news")}{navLink("Community", "/community")}{navLink("My dashboard", "/dashboard")}</div>
         {groups.map((group) => <div className="kh-mobile-group" key={group.label}><p>{group.label}</p>{group.links.map(([label, href]) => navLink(label, href))}</div>)}
         <div className="kh-mobile-account">{user ? <>{navLink("Profile & settings", "/settings")}<button className="kh-button kh-button-secondary" onClick={logout}>Log out</button></> : <><Link href="/login" className="kh-button kh-button-secondary" onClick={close}>Log in</Link><Link href="/signup" className="kh-button kh-button-primary" onClick={close}>Join the hub<Icon name="arrow" /></Link></>}</div>
       </nav>}

@@ -1,6 +1,11 @@
 import type { SVGProps } from "react";
 
 const paths = {
+  chat: "M21 11a8 8 0 0 1-8 8H8l-5 3V11a9 9 0 0 1 18 0ZM7 10h10M7 14h6",
+  share: "M12 16V3m-5 5 5-5 5 5M5 13v8h14v-8",
+  trash: "M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7m4-7v7",
+  flag: "M5 22V3c5-4 9 4 14 0v11c-5 4-9-4-14 0",
+  refresh: "M20 7v5h-5M4 17v-5h5M6 6a8 8 0 0 1 13 2M5 16a8 8 0 0 0 13 2",
   arrow: "M5 12h14m-6-6 6 6-6 6",
   external: "M14 4h6v6m0-6L10 14M10 4H5a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-5",
   chevron: "m8 10 4 4 4-4",

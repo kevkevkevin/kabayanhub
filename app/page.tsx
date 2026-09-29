@@ -11,7 +11,7 @@ const shortcuts: { title: string; caption: string; href: string; icon: IconName;
   { title: "Budget tracker", caption: "Make every riyal count", href: "/budget", icon: "wallet", color: "yellow" },
   { title: "Find a job", caption: "Your next opportunity", href: "/market/jobs", icon: "briefcase", color: "blue" },
   { title: "Marketplace", caption: "Discover your rewards", href: "/marketplace", icon: "bag", color: "red" },
-  { title: "Tambayan", caption: "Your people are here", href: "/tambayan", icon: "users", color: "yellow" },
+  { title: "Community", caption: "Your people are here", href: "/community", icon: "users", color: "yellow" },
 ];
 
 const portals = {
@@ -103,7 +103,7 @@ export default function HomePage() {
       <section aria-labelledby="discover-title">
         <div className="kh-section-heading"><div><p className="kh-eyebrow">THERE’S MORE TO YOUR HUB</p><h2 id="discover-title">A space to grow. A place to belong.</h2></div></div>
         <div className="kh-discover-grid">
-          <Link href="/tambayan" className="kh-story-card"><div className="kh-story-image"><Image src="/news/tagumpay 1.jpg" alt="Kabayans gathering at a community event" width={640} height={360} unoptimized /><span className="kh-image-tag"><Icon name="users" width={14} />THE COMMUNITY</span></div><div className="kh-story-copy"><h3>Malayo man, magkakasama.</h3><p>Share a story, meet fellow Kabayans, and make yourself at home in Tambayan.</p><span className="kh-inline-link">Join the conversation<Icon name="arrow" width={16} /></span></div></Link>
+          <Link href="/community" className="kh-story-card"><div className="kh-story-image"><Image src="/news/tagumpay 1.jpg" alt="Kabayans gathering at a community event" width={640} height={360} unoptimized /><span className="kh-image-tag"><Icon name="users" width={14} />THE COMMUNITY</span></div><div className="kh-story-copy"><h3>Malayo man, magkakasama.</h3><p>Share a story, meet fellow Kabayans, and make yourself at home in the community.</p><span className="kh-inline-link">Join the conversation<Icon name="arrow" width={16} /></span></div></Link>
           <Link href="/arabic-quiz" className="kh-learning-card"><span className="kh-eyebrow">A LITTLE LEARNING, EVERY DAY</span><div className="kh-arabic-art" aria-hidden="true"><span lang="ar" dir="rtl">أهلاً</span><span>AHLAN · HELLO</span></div><div><h3>New country. New confidence.</h3><p>Build your Arabic, one useful phrase at a time. Start with a quick quiz.</p><span className="kh-inline-link">Let’s learn together<Icon name="arrow" width={16} /></span></div></Link>
           <div className="kh-local-card"><span className="kh-feature-icon kh-tone-yellow"><Icon name="home" width={26} height={26} /></span><p className="kh-eyebrow">A TASTE OF HOME</p><h3>Your favorites,<br />a little nearer.</h3><p>Find Filipino restaurants and Pinoy-friendly supermarkets around Saudi.</p><div><Link href="/market/restaurants" className="kh-local-link">Explore restaurants<Icon name="arrow" width={16} /></Link><Link href="/market/supermarkets" className="kh-local-link">Find supermarkets<Icon name="arrow" width={16} /></Link></div></div>
         </div>

@@ -18,6 +18,8 @@ import {
 } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "../../lib/firebase";
+import ProfileEditor from "../components/social/ProfileEditor";
+import { Avatar, useSocialProfile } from "../components/social/Profile";
 
 // --- TYPES ---
 type ActivityItem = {
@@ -126,6 +128,7 @@ function isSameDay(a: Date | null, b: Date | null): boolean {
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
+  const { profile: socialProfile } = useSocialProfile(user?.uid);
   const [loading, setLoading] = useState(true);
 
   // User Data
@@ -315,7 +318,7 @@ export default function DashboardPage() {
         <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
            <div className="flex items-center gap-5">
               <div className="h-16 w-16 md:h-20 md:w-20 rounded-full bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-3xl font-bold shadow-inner">
-                {avatarInitial}
+                {socialProfile ? <Avatar profile={socialProfile} large /> : avatarInitial}
               </div>
               <div>
                  <p className="text-blue-200 text-sm font-medium mb-1 uppercase tracking-wider">Welcome back</p>
@@ -337,6 +340,8 @@ export default function DashboardPage() {
            </div>
         </div>
       </section>
+
+      {user && <ProfileEditor key={user.uid} uid={user.uid} onSaved={profile => { setUsername(profile.username); setDisplayName(profile.displayName); }} />}
 
       {/* ───────── ALERTS ───────── */}
       {status && (

@@ -1,0 +1,23 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAdmin() {
+      return request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    match /social/avatars/{uid}/avatar.jpg {
+      allow read: if true;
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.size <= 2 * 1024 * 1024
+        && request.resource.contentType == 'image/jpeg';
+      allow delete: if request.auth != null && request.auth.uid == uid;
+    }
+    // Preserve the existing product-photo upload path for administrators.
+    match /market/products/{path=**} {
+      allow read: if true;
+      allow create, update: if isAdmin() && request.resource.size <= 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+      allow delete: if isAdmin();
+    }
+  }
+}

@@ -1,85 +1,94 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 
-type ThemeStyle = "sunset" | "flag" | "midnight";
+type ThemeStyle = "hero" | "sunset" | "flag" | "midnight";
 type Mode = "modern" | "traditional";
+const BAYBAYIN_CANVAS_FONT = '400 96px "Baybayin", sans-serif';
+type RenderedCard = { key: string; url: string; file: File | null; error: string | null };
 
 export default function BaybayinCardPage() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [text, setText] = useState("Kabayan Hub sa Saudi");
   const [name, setName] = useState("Kev");
-  const [theme, setTheme] = useState<ThemeStyle>("sunset");
+  const [theme, setTheme] = useState<ThemeStyle>("hero");
   const [mode, setMode] = useState<Mode>("modern");
   const [status, setStatus] = useState<string | null>(null);
+  const [rendered, setRendered] = useState<RenderedCard>({ key: "", url: "", file: null, error: null });
+  const [retry, setRetry] = useState(0);
+  const [sharing, setSharing] = useState(false);
 
-  // ✅ Replace this with your real converter once you paste it in
   const baybayin = useMemo(() => convertToBaybayin(text, mode), [text, mode]);
+  const renderKey = JSON.stringify([text, name, theme, mode, retry]);
+  const ready = rendered.key === renderKey && rendered.file !== null && !rendered.error;
+  const renderError = rendered.key === renderKey ? rendered.error : null;
 
   // Draw card whenever inputs change
   useEffect(() => {
+    let cancelled = false;
+    let objectUrl: string | null = null;
     const run = async () => {
-      setStatus(null);
-
-      // Make sure the Baybayin font is ready for CANVAS
-      // (it uses the local font you already loaded via next/font with CSS var)
       try {
-        // Try common names; if it fails, canvas will still draw (but may fallback)
-        await (document as any).fonts?.load?.(`28px var(--font-baybayin)`);
-        await (document as any).fonts?.ready;
-      } catch {}
-
-      drawCard({
-        canvas: canvasRef.current,
-        theme,
-        baybayinText: baybayin,
-        latinText: text,
-        name,
-      });
+        // Canvas does not resolve CSS var() font families. Use the explicit
+        // @font-face family from globals.css and wait for its actual font file.
+        const fonts = await document.fonts.load('400 96px "Baybayin"', "ᜃᜊᜌᜈ᜔");
+        if (!fonts.length || !document.fonts.check('400 96px "Baybayin"', "ᜃᜊᜌᜈ᜔")) {
+          throw new Error("Baybayin font unavailable");
+        }
+        const artwork = theme === "hero" ? await loadHeroArtwork() : undefined;
+        if (cancelled) return;
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        drawCard({ canvas, theme, baybayinText: baybayin, latinText: text, name, artwork });
+        const blob = await new Promise<Blob>((resolve, reject) => {
+          canvas.toBlob(value => value ? resolve(value) : reject(new Error("PNG export failed")), "image/png");
+        });
+        if (cancelled) return;
+        const file = new File([blob], `baybayin-card-${slugify(name) || "kabayan"}.png`, { type: "image/png" });
+        objectUrl = URL.createObjectURL(file);
+        setRendered({ key: renderKey, url: objectUrl, file, error: null });
+        setStatus(null);
+      } catch {
+        if (!cancelled) setRendered({ key: renderKey, url: "", file: null, error: "The card font or image couldn’t load. Check your connection and try again." });
+      }
     };
-
-    run();
-  }, [text, name, theme, baybayin]);
+    void run();
+    return () => { cancelled = true; if (objectUrl) URL.revokeObjectURL(objectUrl); };
+  }, [text, name, theme, baybayin, renderKey]);
 
   const download = () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!ready || !rendered.file) return;
     const a = document.createElement("a");
-    a.href = canvas.toDataURL("image/png");
-    a.download = `baybayin-card-${slugify(name || "kabayan")}.png`;
+    a.href = rendered.url;
+    a.download = rendered.file.name;
+    document.body.appendChild(a);
     a.click();
-    setStatus("Downloaded! Post mo na yan 😋");
+    a.remove();
+    setStatus("Your PNG download is ready—with the Baybayin text included.");
   };
 
   const share = async () => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!ready || !rendered.file || sharing) return;
 
     // Web Share API works best on mobile
+    setSharing(true);
     try {
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob((b) => resolve(b), "image/png")
-      );
-      if (!blob) throw new Error("No blob");
-
-      const file = new File([blob], "baybayin-card.png", { type: "image/png" });
-
-      // @ts-ignore
-      if (navigator.share && navigator.canShare?.({ files: [file] })) {
-        // @ts-ignore
+      if (navigator.share && navigator.canShare?.({ files: [rendered.file] })) {
         await navigator.share({
           title: "My Baybayin Card",
           text: "Made in Kabayan Hub 🇵🇭",
-          files: [file],
+          files: [rendered.file],
         });
         setStatus("Shared! 🔥");
       } else {
         download(); // fallback
       }
-    } catch (e) {
-      download(); // fallback
-    }
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") return;
+      setStatus("Sharing isn’t available right now. Use Download PNG to save your card.");
+    } finally { setSharing(false); }
   };
 
   return (
@@ -146,6 +155,7 @@ export default function BaybayinCardPage() {
                 onChange={(e) => setTheme(e.target.value as ThemeStyle)}
                 className="w-full rounded-2xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-sm text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
               >
+                <option value="hero">Kabayan Hero ✨</option>
                 <option value="sunset">Sunset Candy 🍬</option>
                 <option value="flag">PH Flag Pop 🇵🇭</option>
                 <option value="midnight">Midnight Glow 🌙</option>
@@ -188,26 +198,28 @@ export default function BaybayinCardPage() {
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">
-            <button onClick={download} className="kh-btn bg-[var(--kh-yellow)] text-slate-900 border-transparent">
+            <button onClick={download} disabled={!ready || sharing} className="kh-button kh-button-yellow">
               Download PNG ⬇️
             </button>
-            <button onClick={share} className="kh-btn bg-[var(--kh-blue)] text-white border-transparent">
+            <button onClick={share} disabled={!ready || sharing} className="kh-button kh-button-primary">
               Share 📲
             </button>
             <button
               onClick={() => {
                 setText("Kabayan Hub sa Saudi");
                 setName("Kev");
-                setTheme("sunset");
+                setTheme("hero");
+                setMode("modern");
               }}
-              className="kh-btn"
+              className="kh-button kh-button-secondary"
             >
               Reset
             </button>
           </div>
 
-          {status && (
-            <p className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+          {renderError && <div role="alert" className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-xl px-3 py-2">{renderError}<button className="ml-2 underline" onClick={() => setRetry(value => value + 1)}>Retry</button></div>}
+          {status && ready && (
+            <p role="status" className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
               {status}
             </p>
           )}
@@ -219,7 +231,7 @@ export default function BaybayinCardPage() {
             <div>
               <h2 className="text-sm font-semibold text-[var(--kh-text)]">Your share card</h2>
               <p className="text-[11px] text-[var(--kh-text-muted)]">
-                Looks best on Instagram Story / FB post
+                Made for sharing your Filipino roots
               </p>
             </div>
             <span className="rounded-full bg-[var(--kh-bg-subtle)] px-3 py-1 text-[10px] text-[var(--kh-text-muted)]">
@@ -228,12 +240,12 @@ export default function BaybayinCardPage() {
           </div>
 
           <div className="mt-4 overflow-hidden rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] p-3">
-            <canvas ref={canvasRef} width={1080} height={1080} className="w-full h-auto rounded-2xl" />
+            <canvas ref={canvasRef} width={1080} height={1080} aria-hidden="true" className="hidden" />
+            {ready ? <Image src={rendered.url} alt={`Baybayin card: ${baybayin || "empty"}`} width={1080} height={1080} unoptimized className="w-full h-auto rounded-2xl" /> : <div role="status" className="aspect-square flex items-center justify-center p-6 text-center text-sm text-[var(--kh-text-secondary)]">{renderError ? "Your card couldn’t be prepared. Use Retry to try again." : "Preparing your Baybayin card…"}</div>}
           </div>
 
           <p className="mt-3 text-[11px] text-[var(--kh-text-muted)]">
-            If you still see □□□ on the card, that means the font file isn’t loaded.
-            Double-check the font path in <code>public/fonts</code>.
+            {ready ? "Your PNG includes the Baybayin lettering exactly as shown above." : renderError ? "The card isn’t ready to download yet." : "Preparing your Baybayin lettering and PNG…"}
           </p>
         </div>
       </section>
@@ -250,18 +262,25 @@ function drawCard(opts: {
   baybayinText: string;
   latinText: string;
   name: string;
+  artwork?: HTMLImageElement;
 }) {
-  const { canvas, theme, baybayinText, latinText, name } = opts;
+  const { canvas, theme, baybayinText, latinText, name, artwork } = opts;
   if (!canvas) return;
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  if (!ctx) throw new Error("Canvas unavailable");
 
   const W = canvas.width;
   const H = canvas.height;
 
   // Clear
   ctx.clearRect(0, 0, W, H);
+
+  if (theme === "hero") {
+    if (!artwork) throw new Error("Card artwork unavailable");
+    drawHeroCard(ctx, artwork, baybayinText, latinText, name, W, H);
+    return;
+  }
 
   // Background gradient
   const bg = ctx.createLinearGradient(0, 0, W, H);
@@ -309,16 +328,13 @@ function drawCard(opts: {
   ctx.font = "700 26px system-ui, -apple-system, Segoe UI, Arial";
   ctx.fillText("🇵🇭  KABAYAN BAYBAYIN CARD", cardX + 78, cardY + 92);
 
-  // Main Baybayin text (IMPORTANT: uses CSS var font family)
+  // Use the loaded, named font; CSS variables are invalid in canvas.font.
   ctx.fillStyle = theme === "midnight" ? "rgba(255,255,255,0.95)" : "#0f172a";
   ctx.textAlign = "left";
 
-  // Try to use the loaded font variable name in canvas:
-  // Some browsers won't accept CSS var in canvas font, so we add fallbacks.
-  // If your font doesn't render in canvas, we'll fix it next by using a known family name.
-  ctx.font = `700 96px var(--font-baybayin), "Noto Sans Tagalog", "Noto Sans Tagalog Regular", system-ui`;
+  ctx.font = BAYBAYIN_CANVAS_FONT;
 
-  const lines = wrapLines(ctx, baybayinText || "—", cardX + 56, cardY + 210, cardW - 112, 108);
+  const lines = wrapLines(ctx, baybayinText || "—", cardW - 112);
   for (let i = 0; i < lines.length && i < 4; i++) {
     ctx.fillText(lines[i], cardX + 56, cardY + 240 + i * 110);
   }
@@ -339,6 +355,71 @@ function drawCard(opts: {
   ctx.fillStyle = theme === "midnight" ? "rgba(250,204,21,0.95)" : "#0f172a";
   ctx.font = "900 26px system-ui, -apple-system, Segoe UI, Arial";
   ctx.fillText("Made in Kabayan Hub", cardX + cardW - 308, cardY + cardH - 104);
+}
+
+let heroArtworkPromise: Promise<HTMLImageElement> | null = null;
+
+function loadHeroArtwork() {
+  if (!heroArtworkPromise) {
+    const artwork = new window.Image();
+    artwork.src = "/baybayin-hero.png";
+    heroArtworkPromise = artwork.decode().then(() => artwork).catch(error => {
+      heroArtworkPromise = null;
+      throw error;
+    });
+  }
+  return heroArtworkPromise;
+}
+
+function drawHeroCard(
+  ctx: CanvasRenderingContext2D,
+  artwork: HTMLImageElement,
+  baybayinText: string,
+  latinText: string,
+  name: string,
+  width: number,
+  height: number
+) {
+  ctx.drawImage(artwork, 0, 0, width, height);
+  ctx.textAlign = "left";
+  ctx.fillStyle = "#123475";
+  ctx.font = "700 22px system-ui, -apple-system, Segoe UI, Arial";
+  ctx.fillText("BAYBAYIN / ATING PAMANA", 130, 244);
+  ctx.fillStyle = "#dc3039";
+  ctx.fillRect(130, 261, 48, 5);
+  ctx.fillStyle = "#f5bf23";
+  ctx.fillRect(178, 261, 48, 5);
+
+  // Keep the lettering inside the open sky, above the mascot's face.
+  let fontSize = 96;
+  let lines: string[];
+  do {
+    ctx.font = `400 ${fontSize}px "Baybayin", sans-serif`;
+    lines = wrapLines(ctx, baybayinText || "—", 790);
+    if (lines.length * fontSize * 1.3 <= 215 || fontSize <= 32) break;
+    fontSize -= 4;
+  } while (true);
+  ctx.fillStyle = "#112c65";
+  const maxLines = Math.max(1, Math.floor(215 / (fontSize * 1.3)));
+  lines.slice(0, maxLines).forEach((line, index) => {
+    const display = index === maxLines - 1 && lines.length > maxLines ? `${line}…` : line;
+    ctx.fillText(display, 130, 294 + fontSize + index * fontSize * 1.3, 790);
+  });
+
+  ctx.font = "600 30px system-ui, -apple-system, Segoe UI, Arial";
+  ctx.fillStyle = "#263e60";
+  const captionLines = wrapLines(ctx, latinText ? `“${latinText}”` : "", 390);
+  captionLines.slice(0, 3).forEach((line, index) => {
+    const display = index === 2 && captionLines.length > 3 ? `${line}…` : line;
+    ctx.fillText(display, 130, 574 + index * 40, 390);
+  });
+  ctx.font = "700 25px system-ui, -apple-system, Segoe UI, Arial";
+  ctx.fillText(`— ${name || "Kabayan"}`, 130, 574 + Math.min(captionLines.length, 3) * 40 + 22, 390);
+
+  pill(ctx, 80, 952, 350, 58, "#102c65");
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 25px system-ui, -apple-system, Segoe UI, Arial";
+  ctx.fillText("Made in Kabayan Hub", 105, 990, 300);
 }
 
 function pill(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, fill: string) {
@@ -385,10 +466,7 @@ function blob(ctx: CanvasRenderingContext2D, theme: ThemeStyle, cx: number, cy: 
 function wrapLines(
   ctx: CanvasRenderingContext2D,
   text: string,
-  x: number,
-  y: number,
-  maxWidth: number,
-  lineHeight: number
+  maxWidth: number
 ) {
   const words = (text || "").split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -458,7 +536,7 @@ function convertToBaybayin(input: string, mode: "modern" | "traditional") {
   const KUDLIT_U = "ᜓ"; // u/o
 
   // Normalize text for conversion
-  let s = (input || "")
+  const s = (input || "")
     .toLowerCase()
     .replace(/qu/g, "kw")
     .replace(/q/g, "k")

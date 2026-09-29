@@ -48,7 +48,15 @@ service cloud.firestore {
     /* ───────── users ───────── */
     match /users/{userId} {
       allow read: if isSignedIn();
-      allow write: if isSignedIn() && request.auth.uid == userId;
+      // Signup may only create an ordinary user. Role assignment belongs to
+      // trusted server code / the Firebase console, never a client write.
+      allow create: if isSignedIn() && request.auth.uid == userId
+        && request.resource.data.role == "user";
+      // affectedKeys includes additions and removals, so this also protects
+      // legacy profiles without a role and full-document replacement writes.
+      allow update: if isSignedIn() && request.auth.uid == userId
+        && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']);
+      allow delete: if false;
     }
 
     match /users/{userId}/activity/{docId} {
@@ -61,6 +69,95 @@ service cloud.firestore {
 
     match /users/{userId}/calorieEntries/{docId} {
       allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    /* ───────── social community (no points rewards) ───────── */
+    function ownsSocialProfile(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function hasSocialProfile() {
+      return isSignedIn() && exists(/databases/$(database)/documents/socialProfiles/$(request.auth.uid));
+    }
+    function validSocialProfile(uid) {
+      let data = request.resource.data;
+      return data.keys().hasOnly(['username', 'displayName', 'bio', 'photoPath', 'createdAt', 'updatedAt'])
+        && data.username is string && data.username.matches('^[a-z0-9_]{3,20}$')
+        && data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 50
+        && data.bio is string && data.bio.size() <= 160
+        && (data.photoPath == '' || data.photoPath == 'social/avatars/' + uid + '/avatar.jpg')
+        && data.createdAt is timestamp && data.updatedAt == request.time
+        && getAfter(/databases/$(database)/documents/socialHandles/$(data.username)).data.uid == uid;
+    }
+    match /socialProfiles/{uid} {
+      allow read: if true;
+      allow create: if ownsSocialProfile(uid) && validSocialProfile(uid) && request.resource.data.createdAt == request.time;
+      allow update: if ownsSocialProfile(uid) && validSocialProfile(uid)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+      match /following/{target} {
+        allow read: if ownsSocialProfile(uid);
+        allow create: if ownsSocialProfile(uid) && hasSocialProfile() && uid != target
+          && exists(/databases/$(database)/documents/socialProfiles/$(target))
+          && request.resource.data.keys().hasOnly(['createdAt'])
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if ownsSocialProfile(uid);
+      }
+    }
+    match /socialHandles/{handle} {
+      allow get: if true;
+      allow list: if false;
+      allow create: if ownsSocialProfile(request.resource.data.uid)
+        && request.resource.data.keys().hasOnly(['uid'])
+        && handle.matches('^[a-z0-9_]{3,20}$')
+        && getAfter(/databases/$(database)/documents/socialProfiles/$(request.auth.uid)).data.username == handle;
+      allow update: if false;
+      allow delete: if ownsSocialProfile(resource.data.uid)
+        && getAfter(/databases/$(database)/documents/socialProfiles/$(request.auth.uid)).data.username != handle;
+    }
+    function validSocialText(maxLength) {
+      let data = request.resource.data;
+      return hasSocialProfile() && data.keys().hasOnly(['uid', 'text', 'createdAt'])
+        && data.uid == request.auth.uid && data.text is string
+        && data.text.size() > 0 && data.text.size() <= maxLength && data.text.matches('(?s).*[^\\s].*')
+        && data.createdAt == request.time;
+    }
+    match /socialPosts/{postId} {
+      allow read: if true;
+      allow create: if validSocialText(500);
+      allow update: if false;
+      allow delete: if ownsSocialProfile(resource.data.uid) || isAdmin();
+      match /likes/{uid} {
+        allow read: if exists(/databases/$(database)/documents/socialPosts/$(postId));
+        allow create: if ownsSocialProfile(uid)
+          && exists(/databases/$(database)/documents/socialPosts/$(postId))
+          && request.resource.data.keys().hasOnly(['uid', 'createdAt'])
+          && request.resource.data.uid == uid && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if ownsSocialProfile(uid);
+      }
+      match /replies/{replyId} {
+        allow read: if exists(/databases/$(database)/documents/socialPosts/$(postId));
+        allow create: if exists(/databases/$(database)/documents/socialPosts/$(postId)) && validSocialText(280);
+        allow update: if false;
+        allow delete: if ownsSocialProfile(resource.data.uid) || isAdmin();
+      }
+    }
+    match /socialReports/{reportId} {
+      allow get: if isSignedIn() && (!exists(/databases/$(database)/documents/socialReports/$(reportId)) || resource.data.uid == request.auth.uid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isSignedIn()
+        && request.resource.data.keys().hasOnly(['uid', 'postId', 'reason', 'status', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && reportId == request.resource.data.postId + '_' + request.auth.uid
+        && exists(/databases/$(database)/documents/socialPosts/$(request.resource.data.postId))
+        && request.resource.data.reason in ['spam', 'abuse', 'scam', 'other']
+        && request.resource.data.status == 'open' && request.resource.data.createdAt == request.time;
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'reviewedAt'])
+        && request.resource.data.status in ['reviewed', 'removed']
+        && request.resource.data.reviewedAt == request.time;
+      allow delete: if false;
     }
 
     /* ───────── news ───────── */

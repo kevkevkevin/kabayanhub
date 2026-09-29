@@ -36,7 +36,9 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts",
     "out/types/**/*.ts",
-    "out/dev/types/**/*.ts"
+    "out/dev/types/**/*.ts",
+    ".kabayan-social-preview/types/**/*.ts",
+    ".kabayan-social-preview/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
