@@ -31,6 +31,10 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Use Vercel's **Next.js** framework preset with `npm run build`. Leave the Output Directory override disabled so Vercel uses `.next`. Do not set `KABAYAN_BUILD_DIR` on Vercel; it is only for isolated local builds.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Configure the production `NEXT_PUBLIC_FIREBASE_*` environment variables used in `lib/firebase.ts` before building. Leave `NEXT_PUBLIC_USE_FIREBASE_EMULATORS` unset or set to `false` in production. Environment changes require a new deployment.
+
+The app uses the Next.js runtime for dynamic market and news routes, rather than `output: "export"`. The legacy Firebase Hosting `out` configuration in `firebase.json` is not used for Vercel deployments. Firebase still provides authentication, Firestore, and Storage; deploying the website does not deploy Firebase rules or indexes. See [community deployment instructions](docs/community.md#deploying-the-feature) for those steps.
+
+Verify the production build locally with `npm run build`, then serve it with `npm start`. If using `KABAYAN_BUILD_DIR` locally, use the same value for both commands.

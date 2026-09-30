@@ -53,7 +53,7 @@ Local repository changes do not update Firebase. Before production use:
 
 1. Verify the intended Firebase project, existing administrators, Storage bucket configuration, and billing availability for uploads.
 2. Deploy `firestore:rules`, `firestore:indexes`, and `storage` from the provided configuration; wait for indexes to finish building. The new Storage rules preserve the repository's known administrator product-upload path, but compare them with any existing console-only rules before deployment. Preserve unrelated live indexes if the CLI proposes removal.
-3. Build and deploy the site using its existing hosting workflow with emulator mode disabled. The repository has an existing static-export blocker on dynamic market routes; address that before a full production export.
+3. Build and deploy the site on Vercel using the Next.js framework preset, `npm run build`, and the default output directory with emulator mode disabled. Dynamic market and news routes use the Next.js runtime; this project does not produce a static export. See the README for environment and hosting settings.
 4. Verify a real account can publish a public profile, upload its avatar, and interact with a post, then assign a community moderator to review reports. For an open public launch, add App Check and server-side rate limiting as the next abuse-control layer.
 
 No deployment or live-data migration is performed by the local test commands.
