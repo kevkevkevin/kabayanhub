@@ -4,8 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname,useRouter } from "next/navigation";
 import { useEffect,useRef,useState } from "react";
-import { auth } from "../../lib/backend";
+import { auth, db } from "../../lib/backend";
 import { onAuthStateChanged,signOut,type User } from "../../lib/backend/auth";
+import { doc, onSnapshot } from "../../lib/backend/db";
 import Icon from "./Icon";
 
 const groups = [
@@ -21,6 +22,8 @@ export default function TopNavClient() {
   const router = useRouter();
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [adminUid, setAdminUid] = useState<string | null>(null);
+  const isAdmin = !!user && adminUid === user.uid;
   const [ready, setReady] = useState(false);
   const [dark, setDark] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -30,6 +33,10 @@ export default function TopNavClient() {
   const groupButtons = useRef<Record<string, HTMLButtonElement | null>>({});
 
   useEffect(() => onAuthStateChanged(auth, (u) => { setUser(u); setReady(true); }), []);
+  useEffect(() => {
+    if (!user) return;
+    return onSnapshot(doc(db, "users", user.uid), snapshot => setAdminUid(snapshot.data()?.role === "admin" ? user.uid : null), () => setAdminUid(null));
+  }, [user]);
   useEffect(() => {
     const syncTheme = () => setDark(document.documentElement.classList.contains("kh-dark"));
     syncTheme();
@@ -93,7 +100,7 @@ export default function TopNavClient() {
         <div className="kh-nav-actions">
           <button className="kh-icon-button" onClick={toggleTheme} aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}><Icon name={dark ? "sun" : "moon"} width={18} height={18} /></button>
           <div className="kh-desktop-account">
-            {ready && user ? <><Link href="/settings" className="kh-icon-button" aria-label="Profile and settings" onClick={close}><Icon name="settings" /></Link><Link href="/dashboard" className="kh-button kh-button-primary" onClick={close}>My dashboard<Icon name="arrow" width={16} /></Link><button className="kh-text-button" onClick={logout}>Log out</button></> : <><Link href="/login" className="kh-text-button">Log in</Link><Link href="/signup" className="kh-button kh-button-primary">Join the hub<Icon name="arrow" width={16} /></Link></>}
+            {ready && user ? <><Link href={isAdmin ? "/admin" : "/settings"} className="kh-icon-button" aria-label={isAdmin ? "Admin workspace" : "Profile and settings"} title={isAdmin ? "Admin workspace" : "Profile and settings"} onClick={close}><Icon name={isAdmin ? "shield" : "settings"} /></Link><Link href="/dashboard" className="kh-button kh-button-primary" onClick={close}>My dashboard<Icon name="arrow" width={16} /></Link><button className="kh-text-button" onClick={logout}>Log out</button></> : <><Link href="/login" className="kh-text-button">Log in</Link><Link href="/signup" className="kh-button kh-button-primary">Join the hub<Icon name="arrow" width={16} /></Link></>}
           </div>
           <button className="kh-icon-button kh-menu-toggle" aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen} aria-controls="mobile-navigation" onClick={() => { setMenuOpen(!menuOpen); setOpenGroup(null); }}><Icon name={menuOpen ? "close" : "menu"} /></button>
         </div>
@@ -102,7 +109,7 @@ export default function TopNavClient() {
       {menuOpen && <nav className="kh-mobile-nav" id="mobile-navigation" aria-label="Mobile navigation">
         <div className="kh-mobile-primary">{navLink("Home", "/")}{navLink("News", "/news")}{navLink("Community", "/community")}{navLink("My dashboard", "/dashboard")}</div>
         {groups.map((group) => <div className="kh-mobile-group" key={group.label}><p>{group.label}</p>{group.links.map(([label, href]) => navLink(label, href))}</div>)}
-        <div className="kh-mobile-account">{user ? <>{navLink("Profile & settings", "/settings")}<button className="kh-button kh-button-secondary" onClick={logout}>Log out</button></> : <><Link href="/login" className="kh-button kh-button-secondary" onClick={close}>Log in</Link><Link href="/signup" className="kh-button kh-button-primary" onClick={close}>Join the hub<Icon name="arrow" /></Link></>}</div>
+        <div className="kh-mobile-account">{user ? <>{isAdmin && navLink("Admin workspace", "/admin")}{navLink("Profile & settings", "/settings")}<button className="kh-button kh-button-secondary" onClick={logout}>Log out</button></> : <><Link href="/login" className="kh-button kh-button-secondary" onClick={close}>Log in</Link><Link href="/signup" className="kh-button kh-button-primary" onClick={close}>Join the hub<Icon name="arrow" /></Link></>}</div>
       </nav>}
     </header>
   );
