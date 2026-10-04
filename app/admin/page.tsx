@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { FormEvent,useEffect,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
 import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  limit,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
+addDoc,
+collection,
+doc,
+getDoc,
+getDocs,
+limit,
+orderBy,
+query,
+serverTimestamp,
+updateDoc,
+} from "../../lib/backend/db";
 
 type Tab = "news" | "videos" | "marketplace" | "purchases";
 
@@ -587,7 +587,7 @@ export default function AdminPage() {
       console.error("Failed to mark redeemed:", err);
       if (err?.code === "permission-denied") {
         setError(
-          "Permission denied when updating purchase. Check Firestore rules for marketplacePurchases."
+          "Your account cannot update this purchase. Please sign in as an administrator."
         );
       } else {
         setError("Failed to update purchase status. Please try again.");

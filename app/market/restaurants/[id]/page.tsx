@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../../../lib/firebase";
+import { useParams,useRouter } from "next/navigation";
+import { useEffect,useMemo,useState } from "react";
+import { db } from "../../../../lib/backend";
+import { doc,getDoc } from "../../../../lib/backend/db";
 
 type Restaurant = {
   id: string;
@@ -319,7 +319,7 @@ export default function RestaurantDetailPage() {
           {/* Tiny footer note */}
           <p className="text-[11px] text-[var(--kh-text-muted)]">
             Tip: If details are missing, admin can update this restaurant doc in
-            Firestore (phone, hours, mapUrl, etc.).
+            the restaurant editor.
           </p>
         </div>
       </section>

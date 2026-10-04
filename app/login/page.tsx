@@ -1,11 +1,11 @@
 // app/login/page.tsx
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../lib/firebase";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { FormEvent,useState } from "react";
+import { auth } from "../../lib/backend";
+import { signInWithEmailAndPassword } from "../../lib/backend/auth";
 import AuthAside from "../components/AuthAside";
 
 export default function LoginPage() {
@@ -32,8 +32,10 @@ export default function LoginPage() {
     } catch (err: unknown) {
       console.error("Login failed:", err);
       setError(
-        (err as { code?: string })?.code === "auth/invalid-credential"
+        (err as { code?: string })?.code === "invalid_credentials"
           ? "Invalid email or password."
+          : (err as { code?: string })?.code === "email_not_confirmed"
+          ? "Please confirm your email using the link in your inbox, then log in."
           : "Failed to log in. Please try again."
       );
     } finally {

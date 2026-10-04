@@ -1,11 +1,11 @@
 // app/signup/page.tsx
 "use client";
 
-import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { FormEvent,useState } from "react";
+import { registerUser } from "../../lib/backend/auth";
+
+
 import Link from "next/link";
 import AuthAside from "../components/AuthAside";
 
@@ -17,6 +17,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
+  const [confirmationSent, setConfirmationSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,38 +42,20 @@ export default function SignupPage() {
 
     setLoading(true);
     try {
-      // Create auth user
-      const cred = await createUserWithEmailAndPassword(auth, email, password);
-
-      const finalDisplayName =
-        signupUsername || displayName || email.split("@")[0];
-
-      // Update Firebase Auth profile (optional but nice)
-      await updateProfile(cred.user, {
-        displayName: finalDisplayName,
-      });
-
-      // Create Firestore user doc
-      const userRef = doc(db, "users", cred.user.uid);
-      await setDoc(userRef, {
-        email,
-        username: signupUsername,
-        displayName: finalDisplayName,
-        points: 0,
-        role: "user",
-        createdAt: serverTimestamp(),
-        lastVisit: serverTimestamp(),
-      });
+      const result = await registerUser(email, password, signupUsername, displayName || signupUsername);
+      if (result.needsConfirmation) { setConfirmationSent(true); return; }
 
       router.push("/dashboard");
     } catch (err: unknown) {
       console.error("Signup failed:", err);
       let msg = "Failed to sign up. Please try again.";
       const code = (err as { code?: string })?.code;
-      if (code === "auth/email-already-in-use") {
+      if (code === "user_already_exists" || code === "email_exists") {
         msg = "This email is already registered. Try logging in instead.";
-      } else if (code === "auth/weak-password") {
+      } else if (code === "weak_password") {
         msg = "Password is too weak. Please use at least 6 characters.";
+      } else if (code === "over_email_send_rate_limit") {
+        msg = "Too many confirmation emails requested. Please wait a few minutes and try again.";
       }
       setError(msg);
     } finally {
@@ -101,6 +84,7 @@ export default function SignupPage() {
           </p>
         )}
 
+        {confirmationSent && <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800">Check your email to confirm your account, then log in. Your profile will be ready when you return.</p>}
         <form onSubmit={handleSubmit} className="space-y-4 text-sm">
           {/* Name (optional) */}
           <div className="space-y-1">
@@ -178,7 +162,7 @@ export default function SignupPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || confirmationSent}
             className="mt-2 flex w-full items-center justify-center rounded-full bg-[var(--kh-blue)] px-4 py-2 text-sm font-semibold text-white shadow-[var(--kh-card-shadow)] hover:brightness-110 disabled:opacity-60"
           >
             {loading ? "Creating account…" : "Sign up"}

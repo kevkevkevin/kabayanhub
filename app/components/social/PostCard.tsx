@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent } from "react";
-import { addDoc, collection, deleteDoc, doc, getCountFromServer, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, startAfter, type QueryDocumentSnapshot } from "firebase/firestore";
-import { db } from "../../../lib/firebase";
-import { REPLY_LIMIT, socialError, type SocialPost } from "../../../lib/social";
+import { useEffect,useState,type FormEvent } from "react";
+import { db } from "../../../lib/backend";
+import { addDoc,collection,deleteDoc,doc,getCountFromServer,getDoc,getDocs,limit,orderBy,query,serverTimestamp,setDoc,startAfter,type QueryDocumentSnapshot } from "../../../lib/backend/db";
+import { REPLY_LIMIT,socialError,type SocialPost } from "../../../lib/social";
 import Icon from "../Icon";
 import { Author } from "./Profile";
 

@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect,useMemo,useState } from "react";
+import { db } from "../../../lib/backend";
 import {
-  collection,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  where,
-} from "firebase/firestore";
-import { db } from "../../../lib/firebase";
+collection,
+getDocs,
+limit,
+orderBy,
+query,
+where,
+} from "../../../lib/backend/db";
 
 type City = "All" | "Riyadh" | "Jeddah" | "Alkhobar";
 
@@ -24,7 +24,7 @@ type Restaurant = {
   categories?: string[];
   priceLevel?: number; // 1-3 optional
   isFeatured?: boolean;
-  createdAt?: any; // Firestore Timestamp
+  createdAt?: any; // database timestamp
 };
 
 const CITIES: City[] = ["All", "Riyadh", "Jeddah", "Alkhobar"];
@@ -88,7 +88,7 @@ export default function MarketRestaurantsPage() {
         console.error("Failed to load restaurants:", err);
         if (isMounted)
           setError(
-            "Failed to load restaurants. Check Firestore rules or refresh the page."
+            "Failed to load restaurants. Please refresh and try again."
           );
       } finally {
         if (isMounted) setLoading(false);

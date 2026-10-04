@@ -1,5 +1,7 @@
 # User role protection
 
+Historical Firebase documentation. The active application now uses Supabase policies and protected database functions; see `supabase-migration.md`. This Firebase fix remains deployed to the retained legacy project.
+
 Client signup must create `/users/{uid}` with `role: "user"`. A signed-in owner may edit their other profile fields, but cannot add, change, or remove `role`, including through merge or replacement writes. Legacy profiles without a role remain editable without acquiring a role. Client deletion of user documents is denied; account deletion must go through a trusted administrative workflow.
 
 Assign or revoke roles only through a trusted Admin SDK environment or the Firebase console using authorized IAM access. Existing administrator roles are preserved. The fix prevents new client-side role changes; it does not identify or revoke any roles assigned before deployment. Review current administrators separately before public launch.

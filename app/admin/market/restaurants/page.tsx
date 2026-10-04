@@ -1,20 +1,20 @@
 "use client";
 
-import { useEffect, useMemo, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { FormEvent,useEffect,useMemo,useState } from "react";
+import { auth,db } from "../../../../lib/backend";
+import { onAuthStateChanged } from "../../../../lib/backend/auth";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../../../lib/firebase";
+addDoc,
+collection,
+deleteDoc,
+doc,
+getDocs,
+orderBy,
+query,
+serverTimestamp,
+updateDoc,
+} from "../../../../lib/backend/db";
 
 type Restaurant = {
   id: string;
@@ -109,7 +109,7 @@ export default function AdminRestaurantsPage() {
       }
       try {
         // check role from /users/{uid}
-        const userSnap = await (await import("firebase/firestore")).getDoc(
+        const userSnap = await (await import("../../../../lib/backend/db")).getDoc(
           doc(db, "users", u.uid)
         );
         const role = userSnap.exists() ? (userSnap.data() as any).role : null;
@@ -263,7 +263,7 @@ export default function AdminRestaurantsPage() {
       await load();
     } catch (e: any) {
       console.error("Save failed:", e);
-      setError("Save failed. Check your Firestore rules (admin) and try again.");
+      setError("Save failed. Please check your administrator access and try again.");
     }
   };
 

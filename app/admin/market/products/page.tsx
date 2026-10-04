@@ -1,27 +1,27 @@
 "use client";
 
-import { useEffect, useMemo, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
+import { FormEvent,useEffect,useMemo,useState } from "react";
+import { auth,db } from "../../../../lib/backend";
+import { onAuthStateChanged } from "../../../../lib/backend/auth";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from "firebase/firestore";
-import { auth, db } from "../../../../lib/firebase";
+addDoc,
+collection,
+deleteDoc,
+doc,
+getDoc,
+getDocs,
+limit,
+orderBy,
+query,
+serverTimestamp,
+updateDoc,
+where,
+} from "../../../../lib/backend/db";
 
 // Optional image upload (Firebase Storage)
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
-import { storage } from "../../../../lib/firebase";
+import { storage } from "../../../../lib/backend";
+import { getDownloadURL,ref,uploadBytes } from "../../../../lib/backend/storage";
 
 type Supermarket = {
   id: string;
@@ -205,7 +205,7 @@ export default function AdminMarketProductsPage() {
       console.error(e);
       if (String(e?.message || "").toLowerCase().includes("requires an index")) {
         setError(
-          "This query needs a Firestore index. Click the index link in the console error, create it, then refresh."
+          "Products could not load. Please try again or contact the site administrator."
         );
       } else {
         setError("Failed to load products.");

@@ -1,24 +1,24 @@
 // app/tambayan/page.tsx
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect,useMemo,useRef,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
+import { requireBackend } from "../../lib/backend/client";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
+addDoc,
+collection,
+deleteDoc,
+doc,
+getDoc,
+getDocs,
+limit,
+onSnapshot,
+orderBy,
+query,
+serverTimestamp,
+setDoc
+} from "../../lib/backend/db";
 
 type Sticker = {
   id: string;
@@ -325,7 +325,7 @@ export default function TambayanPage() {
             const winnerMsg = expiredMessages.find((m) => m.uid === randomUid);
 
             if (randomUid && winnerMsg) {
-              rewardUser(randomUid, winnerMsg.username);
+              void rewardUser();
             }
           }
         }
@@ -337,23 +337,12 @@ export default function TambayanPage() {
     return () => clearInterval(cleanupInterval);
   }, [tambayanConfig.earningPointsEnabled]);
 
-  const rewardUser = async (uid: string, username: string) => {
+  const rewardUser = async () => {
     try {
-      const userRef = doc(db, "users", uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const currentPoints = userSnap.data()?.points || 0;
-        await updateDoc(userRef, {
-          points: currentPoints + 50,
-        });
-
-        setStatus(`🎉 ${username} won 50 KP! Chat activity reward!`);
-        setTimeout(() => setStatus(null), 5000);
-      }
-    } catch (e) {
-      console.error("Failed to reward user:", e);
-    }
+      const { data, error } = await requireBackend().rpc("draw_chat_reward");
+      if (error) throw error;
+      if (data) { setStatus(data.username + " won " + data.amount + " KP! Chat activity reward!"); setTimeout(() => setStatus(null), 5000); }
+    } catch (error) { console.error("Failed to check chat reward:", error); }
   };
 
   const stickerMap = useMemo(() => {

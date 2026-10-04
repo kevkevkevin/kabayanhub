@@ -1,19 +1,15 @@
 // app/arabic-quiz/page.tsx
 "use client";
 
-import { useEffect, useState, FormEvent, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { FormEvent,useEffect,useMemo,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
 import {
-  doc,
-  getDoc,
-  updateDoc,
-  collection,
-  addDoc,
-  increment,
-  serverTimestamp,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
+doc,
+getDoc
+} from "../../lib/backend/db";
+import { claimReward } from "../../lib/backend/rewards";
 
 type QuizQuestion = {
   id: string;
@@ -239,26 +235,8 @@ export default function ArabicQuizPage() {
 
     setSubmitting(true);
     try {
-      const userRef = doc(db, "users", user.uid);
-
-      // Reward: flat weekly reward (you can make it dynamic if you want)
-      const reward = WEEKLY_REWARD_KP;
-
-      await Promise.all([
-        updateDoc(userRef, {
-          lastArabicQuiz: serverTimestamp(),
-          arabicQuizScore: s,
-          points: increment(reward),
-          lastVisit: serverTimestamp(),
-        }),
-        addDoc(collection(db, "users", user.uid, "activity"), {
-          type: "arabic_quiz",
-          amount: reward,
-          createdAt: serverTimestamp(),
-          score: s,
-          totalQuestions: QUESTIONS.length,
-        }),
-      ]);
+      const result = await claimReward("arabic_quiz", "", s);
+      const reward = result.amount;
 
       setScore(s);
       setHasFinished(true);

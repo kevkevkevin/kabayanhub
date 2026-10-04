@@ -1,28 +1,28 @@
 // app/admin/news/page.tsx
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic"; // 1. Import dynamic
+import { useRouter } from "next/navigation";
+import { FormEvent,useEffect,useMemo,useState } from "react";
+import "react-quill-new/dist/quill.snow.css";
+import { auth,db } from "../../../lib/backend";
+import { onAuthStateChanged } from "../../../lib/backend/auth";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  Timestamp,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../../lib/firebase";
+addDoc,
+collection,
+deleteDoc,
+doc,
+getDoc,
+getDocs,
+orderBy,
+query,
+serverTimestamp,
+Timestamp,
+updateDoc,
+} from "../../../lib/backend/db";
 
 // 3. Dynamically import ReactQuill-New
 const ReactQuill = dynamic(() => import("react-quill-new"), { ssr: false });
-import "react-quill-new/dist/quill.snow.css";
 
 type NewsDoc = {
   id: string;

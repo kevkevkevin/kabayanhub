@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect,useMemo,useState } from "react";
+import { db } from "../../../lib/backend";
 import {
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  where,
-  limit,
-} from "firebase/firestore";
-import { db } from "../../../lib/firebase";
+collection,
+getDocs,
+limit,
+orderBy,
+query,
+where,
+} from "../../../lib/backend/db";
 
 type Supermarket = {
   id: string;
@@ -62,8 +62,6 @@ export default function SupermarketsPage() {
       // We fetch recent docs then filter client-side for search.
       let q = query(ref, orderBy("createdAt", "desc"), limit(200));
 
-      // Optional Firestore filters that won't require a composite index if you keep it simple.
-      // If you later combine where + orderBy on different fields, Firestore might ask for an index.
       if (city !== "All") {
         q = query(ref, where("city", "==", city), orderBy("createdAt", "desc"), limit(200));
       }

@@ -2,18 +2,16 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
+import { useParams,useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
+import { auth,db } from "../../../lib/backend";
+import { onAuthStateChanged,User } from "../../../lib/backend/auth";
 import {
-  doc,
-  getDoc,
-  serverTimestamp,
-  setDoc,
-  runTransaction,
-  Timestamp,
-} from "firebase/firestore";
-import { auth, db } from "../../../lib/firebase";
+doc,
+getDoc,
+Timestamp
+} from "../../../lib/backend/db";
+import { claimReward } from "../../../lib/backend/rewards";
 
 // 1. Import Sanitizer (Optional but recommended)
 // If you don't want to install 'dompurify', you can skip this, 
@@ -154,18 +152,6 @@ export default function NewsDetailPage() {
   const rewardRead = post?.reward ?? 10;
   const rewardShare = post?.shareReward ?? 5;
 
-  async function addPointsAtomic(uid: string, amount: number) {
-    await runTransaction(db, async (tx) => {
-      const uref = doc(db, "users", uid);
-      const usnap = await tx.get(uref);
-      const current = usnap.exists() ? (usnap.data() as any).points || 0 : 0;
-      tx.update(uref, {
-        points: Number(current) + Number(amount),
-        lastVisit: serverTimestamp(),
-      });
-    });
-  }
-
   async function handleClaimRead() {
     setStatus(null);
     setErr(null);
@@ -185,13 +171,7 @@ export default function NewsDetailPage() {
         setStatus("You already claimed the read reward for this post ✅");
         return;
       }
-      await setDoc(activityRef, {
-        type: "news_read",
-        newsId: id,
-        points: rewardRead,
-        createdAt: serverTimestamp(),
-      });
-      await addPointsAtomic(user.uid, rewardRead);
+      await claimReward("news_read", id);
       setAlreadyClaimedRead(true);
       setStatus(`+${rewardRead} KP claimed for reading! Galing mo Kabayan 🏆`);
     } catch (e) {
@@ -233,14 +213,7 @@ export default function NewsDetailPage() {
         return;
       }
       openFacebookShare(shareUrl || "");
-      await setDoc(activityRef, {
-        type: "news_share",
-        newsId: id,
-        platform: "facebook",
-        points: rewardShare,
-        createdAt: serverTimestamp(),
-      });
-      await addPointsAtomic(user.uid, rewardShare);
+      await claimReward("news_share", id);
       setAlreadyClaimedShare(true);
       setStatus(`+${rewardShare} KP earned for sharing on Facebook! Salamat Kabayan 🇵🇭`);
     } catch (e) {

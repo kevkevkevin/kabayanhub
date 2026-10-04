@@ -1,16 +1,15 @@
 // app/admin/tambayan/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import {
-  doc,
-  getDoc,
-  setDoc,
-  
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../../lib/firebase";
 import { useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
+import { auth,db } from "../../../lib/backend";
+import { onAuthStateChanged } from "../../../lib/backend/auth";
+import {
+doc,
+getDoc,
+setDoc,
+} from "../../../lib/backend/db";
 
 type TambayanConfig = {
   marqueeText: string;

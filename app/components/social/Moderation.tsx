@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, updateDoc, where } from "firebase/firestore";
-import { db } from "../../../lib/firebase";
+import { useEffect,useState } from "react";
+import { db } from "../../../lib/backend";
+import { collection,deleteDoc,doc,getDoc,getDocs,limit,orderBy,query,serverTimestamp,updateDoc,where } from "../../../lib/backend/db";
 import { socialError } from "../../../lib/social";
 
 type Report = { id: string; postId: string; reason: string };

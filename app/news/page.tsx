@@ -2,9 +2,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { collection, getDocs, Timestamp } from "firebase/firestore";
-import { db } from "../../lib/firebase";
+import { useEffect,useMemo,useState } from "react";
+import { db } from "../../lib/backend";
+import { collection,getDocs,Timestamp } from "../../lib/backend/db";
 
 type NewsDoc = {
   id: string;
@@ -12,7 +12,7 @@ type NewsDoc = {
   summary: string;
   content: string;
   imageUrl?: string;
-  createdAt?: any; // Firestore Timestamp
+  createdAt?: any; // database timestamp
   tag?: string;
 
   // Optional (exists in your DB screenshot, but not required)

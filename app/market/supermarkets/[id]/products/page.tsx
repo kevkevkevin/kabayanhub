@@ -1,17 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import { useEffect,useMemo,useState } from "react";
+import { db } from "../../../../../lib/backend";
 import {
-  collection,
-  getDocs,
-  orderBy,
-  query,
-  limit,
-  where,
-} from "firebase/firestore";
-import { db } from "../../../../../lib/firebase";
+collection,
+getDocs,
+limit,
+orderBy,
+query,
+where,
+} from "../../../../../lib/backend/db";
 
 type MarketProduct = {
   id: string;

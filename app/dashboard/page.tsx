@@ -1,25 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  limit,
-  updateDoc,
-  addDoc,
-  increment,
-  serverTimestamp,
-  where,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
+collection,
+doc,
+getDoc,
+getDocs,
+limit,
+orderBy,
+query,
+where
+} from "../../lib/backend/db";
+import { claimReward } from "../../lib/backend/rewards";
+import { Avatar,useSocialProfile } from "../components/social/Profile";
 import ProfileEditor from "../components/social/ProfileEditor";
-import { Avatar, useSocialProfile } from "../components/social/Profile";
 
 // --- TYPES ---
 type ActivityItem = {
@@ -192,7 +189,7 @@ export default function DashboardPage() {
         setActivity(items);
 
         // Leaderboard
-        const usersRef = collection(db, "users");
+        const usersRef = collection(db, "leaderboard");
         const lbQ = query(usersRef, orderBy("points", "desc"), limit(10));
         const lbSnap = await getDocs(lbQ);
         const lb: LeaderEntry[] = [];
@@ -281,20 +278,9 @@ export default function DashboardPage() {
     }
     setCheckinLoading(true);
     try {
-      const userRef = doc(db, "users", user.uid);
-      await Promise.all([
-        updateDoc(userRef, {
-          points: increment(DAILY_CHECKIN_POINTS),
-          lastVisit: serverTimestamp(),
-          lastDailyCheckin: serverTimestamp(),
-        }),
-        addDoc(collection(db, "users", user.uid, "activity"), {
-          type: "daily_checkin",
-          amount: DAILY_CHECKIN_POINTS,
-          createdAt: serverTimestamp(),
-        }),
-      ]);
-      setPoints((prev) => prev + DAILY_CHECKIN_POINTS);
+      const result = await claimReward("daily_checkin");
+      if (!result.awarded) { setStatus("You already checked in today. See you tomorrow!"); setLastDailyCheckin(new Date()); return; }
+      setPoints(result.points);
       setLastDailyCheckin(new Date());
       setStatus(`+${DAILY_CHECKIN_POINTS} KP from your daily Kabayan check-in! 🎉`);
       setActivity((prev) => [

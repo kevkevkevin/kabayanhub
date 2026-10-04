@@ -1,11 +1,11 @@
 // app/market/jobs/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
 import Link from "next/link";
-import { collection, getDocs, query, orderBy } from "firebase/firestore";
-import { auth, db } from "../../../lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { useEffect,useState } from "react";
+import { auth,db } from "../../../lib/backend";
+import { onAuthStateChanged } from "../../../lib/backend/auth";
+import { collection,getDocs,orderBy,query } from "../../../lib/backend/db";
 
 type Job = {
   id: string;

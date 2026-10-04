@@ -1,24 +1,21 @@
 // app/marketplace/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  increment,
-  limit,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  addDoc,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { db, auth } from "../../lib/firebase";
+collection,
+doc,
+getDoc,
+getDocs,
+limit,
+orderBy,
+query
+} from "../../lib/backend/db";
+import { redeemItem } from "../../lib/backend/rewards";
 
 type MarketplaceItem = {
   id: string;
@@ -27,7 +24,7 @@ type MarketplaceItem = {
   imageUrl?: string | null;
   tag?: string;
   price: number; // KP cost
-  stock?: number; // remaining stock
+  stock?: number | null; // null means unlimited stock
 };
 
 const ADMIN_WHATSAPP = "966500000000"; // 👈 REPLACE with your real WhatsApp (no +, no spaces)
@@ -114,70 +111,10 @@ export default function MarketplacePage() {
     setRedeemLoadingId(item.id);
 
     try {
-      const userRef = doc(db, "users", user.uid);
-      const itemRef = doc(db, "marketplaceItems", item.id);
-
-      // Re-read fresh data
-      const [userSnap, itemSnap] = await Promise.all([
-        getDoc(userRef),
-        getDoc(itemRef),
-      ]);
-
-      if (!userSnap.exists() || !itemSnap.exists()) {
-        setStatus("Item or user not found.");
-        setRedeemLoadingId(null);
-        return;
-      }
-
-      const userData = userSnap.data() as any;
-      const itemData = itemSnap.data() as any;
-
-      const currentPoints = userData.points ?? 0;
-      const price = itemData.price ?? item.price ?? 50;
-      const stock = itemData.stock ?? item.stock ?? null;
-
-      if (stock !== null && stock <= 0) {
-        setStatus("This item is already sold out.");
-        setRedeemLoadingId(null);
-        return;
-      }
-
-      if (currentPoints < price) {
-        setStatus("Not enough Kabayan Points to redeem this item.");
-        setRedeemLoadingId(null);
-        return;
-      }
-
-      const newPoints = currentPoints - price;
-      const newStock = stock !== null ? stock - 1 : stock;
-
-      await Promise.all([
-        updateDoc(userRef, {
-          points: increment(-price),
-          lastVisit: serverTimestamp(),
-        }),
-        updateDoc(itemRef, {
-          ...(stock !== null ? { stock: newStock } : {}),
-        }),
-        addDoc(collection(db, "users", user.uid, "activity"), {
-          type: "market_redeem",
-          refId: item.id,
-          title: item.title,
-          amount: -price,
-          createdAt: serverTimestamp(),
-        }),
-          addDoc(collection(db, "marketplacePurchases"), {
-            userId: user.uid,
-            userEmail: user.email || null,
-            userDisplayName: user.email || null,
-            itemId: item.id,
-            itemTitle: item.title,
-            price: price,
-            status: "pending",          // 🆕 new field
-            redeemedAt: null,           // 🆕 new field
-            createdAt: serverTimestamp(),
-        }),
-      ]);
+      const result = await redeemItem(item.id);
+      const newPoints = result.points;
+      const newStock = result.stock;
+      const price = result.price;
 
       setPoints(newPoints);
       setItems((prev) =>

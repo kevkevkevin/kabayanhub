@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, increment, runTransaction, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "../../lib/firebase";
+import { useEffect,useRef,useState } from "react";
+import { CLAIM_SCORE,FALLBACK_WORDS,getISOWeekKey,parseWordPool,type WordPair } from "../../lib/arabic-word-rush";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
+import { doc,getDoc } from "../../lib/backend/db";
+import { claimReward as claimWeeklyReward } from "../../lib/backend/rewards";
 import ArabicWordGame from "../components/ArabicWordGame";
-import { CLAIM_SCORE, FALLBACK_WORDS, getISOWeekKey, parseWordPool, type WordPair } from "../../lib/arabic-word-rush";
 
 type Challenge = { weekKey: string; title: string; rewardKp: number; words: WordPair[]; rewardReady: boolean };
 
@@ -84,22 +85,7 @@ export default function ArabicWordRushPage() {
     setError("");
     setStatus("");
     try {
-      const activityRef = doc(db, "users", uid, "activity", `arabicWordRush_${challenge.weekKey}`);
-      const userRef = doc(db, "users", uid);
-      const awarded = await runTransaction(db, async transaction => {
-        const activity = await transaction.get(activityRef);
-        if (activity.exists()) return false;
-        const user = await transaction.get(userRef);
-        if (!user.exists()) throw new Error("Profile unavailable");
-        // The dashboard, leaderboard and marketplace all use `points`.
-        // Record the claim and credit the balance together, including across tabs.
-        transaction.update(userRef, { points: increment(challenge.rewardKp), lastVisit: serverTimestamp() });
-        transaction.set(activityRef, {
-          type: "arabicWordRush", title: challenge.title, weekKey: challenge.weekKey,
-          score, amount: challenge.rewardKp, createdAt: serverTimestamp(), claimedAt: serverTimestamp(),
-        });
-        return true;
-      });
+      const { awarded } = await claimWeeklyReward("arabicWordRush", challenge.weekKey, score);
       setAlreadyClaimed(true);
       setStatus(awarded ? `+${challenge.rewardKp} KP added to your balance. Ang galing, Kabayan!` : "You’ve already claimed this week’s reward. Keep practicing!");
     } catch {

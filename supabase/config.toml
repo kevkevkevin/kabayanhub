@@ -1,0 +1,6 @@
+project_id = "kabayanhub"
+
+# Partial remote configuration: CLI config push leaves undeclared settings intact.
+[auth]
+site_url = "https://www.kabayanhub.org"
+additional_redirect_urls = ["https://www.kabayanhub.org/login", "https://kabayanhub.org/login", "http://localhost:3000/login", "http://localhost:3002/login"]

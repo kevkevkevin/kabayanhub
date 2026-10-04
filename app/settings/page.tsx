@@ -1,19 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { onAuthStateChanged, User } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
-import ProfileEditor from "../components/social/ProfileEditor";
-import { Avatar, useSocialProfile } from "../components/social/Profile";
+import { useEffect,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged,User } from "../../lib/backend/auth";
 import {
-  doc,
-  getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
+collection,
+doc,
+getDoc,
+getDocs,
+query,
+where,
+} from "../../lib/backend/db";
+import { Avatar,useSocialProfile } from "../components/social/Profile";
+import ProfileEditor from "../components/social/ProfileEditor";
 
 type UserProfile = {
   displayName?: string | null;
@@ -60,7 +60,7 @@ export default function SettingsPage() {
       setAuthUser(u);
       setEmail(u.email ?? null);
 
-      // Load Firestore user profile
+      // Load account profile
       try {
         const ref = doc(db, "users", u.uid);
         const snap = await getDoc(ref);

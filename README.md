@@ -1,40 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# KabayanHub
 
-## Getting Started
+Next.js community hub for Filipinos in Saudi Arabia. Vercel hosts the app; Supabase provides authentication, PostgreSQL, Storage, and realtime updates.
 
-First, run the development server:
+## Local development
 
-```bash
+Use Node.js 24. Copy `.env.example` to `.env.local` and supply your Supabase project URL and publishable key, then run:
+
+```sh
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Only the publishable key belongs in `NEXT_PUBLIC_*` variables. Never put a secret/service-role key in the frontend or commit credentials. New accounts confirm their email before logging in. Existing Firebase test accounts are not migrated.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Database and deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Migrations in `supabase/migrations` create feature tables, access policies, atomic profile/reward functions, public image buckets, and realtime subscriptions. The news migration preserves the original 13 public articles and their IDs without overwriting later edits.
 
-## Learn More
+```sh
+npx supabase login
+npx supabase link --project-ref YOUR_PROJECT_REF
+npx supabase db push
+```
 
-To learn more about Next.js, take a look at the following resources:
+On Vercel, use the Next.js preset, `npm run build`, Node.js 24, and the default Output Directory. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` for the intended environments. Leave `KABAYAN_BUILD_DIR` unset there. Dynamic news and market routes use the Next.js runtime, not a static export.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Configure Supabase Auth with the production site URL and exact `/login` confirmation redirects. Configure production SMTP before inviting a wider audience; the default email service has delivery restrictions.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+See [migration and administration](docs/supabase-migration.md) and [community implementation](docs/community.md).
 
-## Deploy on Vercel
+## Verification
 
-Use Vercel's **Next.js** framework preset with `npm run build`. Leave the Output Directory override disabled so Vercel uses `.next`. Do not set `KABAYAN_BUILD_DIR` on Vercel; it is only for isolated local builds.
+```sh
+npm test
+npx tsc --noEmit
+npm run build
+```
 
-Configure the production `NEXT_PUBLIC_FIREBASE_*` environment variables used in `lib/firebase.ts` before building. Leave `NEXT_PUBLIC_USE_FIREBASE_EMULATORS` unset or set to `false` in production. Environment changes require a new deployment.
+`npm test` runs PostgreSQL permissions/transaction tests in PGlite and the Arabic game tests without touching hosted data. The explicit `npm run test:hosted` command uses an authenticated Supabase CLI to create disposable hosted accounts; see the migration guide before using it. Clean up with `node scripts/verify-supabase.cjs --cleanup` after browser verification.
 
-The app uses the Next.js runtime for dynamic market and news routes, rather than `output: "export"`. The legacy Firebase Hosting `out` configuration in `firebase.json` is not used for Vercel deployments. Firebase still provides authentication, Firestore, and Storage; deploying the website does not deploy Firebase rules or indexes. See [community deployment instructions](docs/community.md#deploying-the-feature) for those steps.
-
-Verify the production build locally with `npm run build`, then serve it with `npm start`. If using `KABAYAN_BUILD_DIR` locally, use the same value for both commands.
+Firebase configuration and `test:legacy:*` scripts remain for rollback/reference. They are not the active backend. The old Firebase project has not been deleted.

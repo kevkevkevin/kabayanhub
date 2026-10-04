@@ -1,19 +1,19 @@
 // app/market/jobs/[id]/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams,useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
+import { auth,db } from "../../../../lib/backend";
+import { onAuthStateChanged } from "../../../../lib/backend/auth";
 import {
-  doc,
-  getDoc,
-  setDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../../../lib/firebase";
+collection,
+doc,
+getDoc,
+getDocs,
+query,
+setDoc,
+where,
+} from "../../../../lib/backend/db";
 
 type Job = {
   id: string;
@@ -223,7 +223,7 @@ export default function JobDetailsPage() {
 
       // Upload CV if new file selected
       if (cvFile) {
-        // For now, convert to base64. In production, use Firebase Storage
+        // For now, convert to base64. Large CVs should use a private document bucket
         cvUrl = await new Promise((resolve, reject) => {
           const reader = new FileReader();
           reader.onload = (e) => resolve(e.target?.result as string);

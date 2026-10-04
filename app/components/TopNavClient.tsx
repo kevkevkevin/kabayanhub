@@ -2,10 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { onAuthStateChanged, signOut, type User } from "firebase/auth";
-import { auth } from "../../lib/firebase";
+import { usePathname,useRouter } from "next/navigation";
+import { useEffect,useRef,useState } from "react";
+import { auth } from "../../lib/backend";
+import { onAuthStateChanged,signOut,type User } from "../../lib/backend/auth";
 import Icon from "./Icon";
 
 const groups = [

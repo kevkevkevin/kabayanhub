@@ -1,22 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect,useMemo,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
 import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  Timestamp,
-  where,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
+addDoc,
+collection,
+deleteDoc,
+doc,
+getDoc,
+limit,
+onSnapshot,
+orderBy,
+query,
+serverTimestamp,
+Timestamp,
+where,
+} from "../../lib/backend/db";
 
 type Moment = {
   id: string;

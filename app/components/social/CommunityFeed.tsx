@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, type FormEvent } from "react";
-import { onAuthStateChanged, type User } from "firebase/auth";
-import { addDoc, collection, deleteDoc, doc, documentId, getDoc, getDocs, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, startAfter, where, type QueryConstraint, type Timestamp } from "firebase/firestore";
-import { auth, db } from "../../../lib/firebase";
-import { POST_LIMIT, profileLink, socialError, type SocialPost } from "../../../lib/social";
-import { Avatar, useSocialProfile } from "./Profile";
-import PostCard from "./PostCard";
-import Moderation from "./Moderation";
+import { useEffect,useState,type FormEvent } from "react";
+import { auth,db } from "../../../lib/backend";
+import { onAuthStateChanged,type User } from "../../../lib/backend/auth";
+import { addDoc,collection,deleteDoc,doc,documentId,getDoc,getDocs,limit,onSnapshot,orderBy,query,serverTimestamp,setDoc,startAfter,where,type QueryConstraint,type Timestamp } from "../../../lib/backend/db";
+import { POST_LIMIT,profileLink,socialError,type SocialPost } from "../../../lib/social";
 import Icon from "../Icon";
+import Moderation from "./Moderation";
+import PostCard from "./PostCard";
+import { Avatar,useSocialProfile } from "./Profile";
 
 export default function CommunityFeed() {
   const params = useSearchParams();

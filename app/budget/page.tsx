@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { FormEvent,useEffect,useMemo,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
 import {
-  addDoc,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  limit,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../lib/firebase";
+addDoc,
+collection,
+doc,
+getDoc,
+getDocs,
+limit,
+orderBy,
+query,
+serverTimestamp,
+updateDoc,
+} from "../../lib/backend/db";
 
 type BudgetEntry = {
   id: string;

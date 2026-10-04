@@ -8,11 +8,15 @@
     "start": "next start",
     "lint": "eslint",
     "test:word-rush": "node --test tests/arabic-word-rush.test.cjs",
-    "test:rules": "firebase emulators:exec --project demo-kabayan-rules --only firestore --config firebase.rules-test.json \"node --test tests/firestore-rules.test.cjs\"",
-    "test:social": "firebase emulators:exec --project demo-kabayan-social --only firestore,storage --config firebase.social-test.json \"node --test tests/social-rules.test.cjs\""
+    "test:rules": "node --test tests/supabase.test.cjs",
+    "test:social": "node --test tests/supabase.test.cjs",
+    "test:legacy:rules": "firebase emulators:exec --project demo-kabayan-rules --only firestore --config firebase.rules-test.json \"node --test tests/firestore-rules.test.cjs\"",
+    "test:legacy:social": "firebase emulators:exec --project demo-kabayan-social --only firestore,storage --config firebase.social-test.json \"node --test tests/social-rules.test.cjs\"",
+    "test": "node --import tsx --test tests/supabase.test.cjs tests/arabic-word-rush.test.cjs tests/backend.test.ts",
+    "test:hosted": "node scripts/verify-supabase.cjs"
   },
   "dependencies": {
-    "firebase": "^12.6.0",
+    "@supabase/supabase-js": "^2.109.0",
     "next": "^16.2.4",
     "react": "19.2.0",
     "react-dom": "19.2.0",
@@ -20,6 +24,7 @@
     "react-quill-new": "^3.7.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.3.16",
     "@firebase/rules-unit-testing": "^5.0.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
@@ -29,8 +34,14 @@
     "baseline-browser-mapping": "^2.10.20",
     "eslint": "^9",
     "eslint-config-next": "16.0.4",
+    "firebase": "^12.19.0",
     "firebase-tools": "^15.12.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "ws": "^8.22.0"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

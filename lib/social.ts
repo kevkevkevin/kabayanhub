@@ -1,6 +1,7 @@
-import { doc, getDoc, runTransaction, serverTimestamp, Timestamp } from "firebase/firestore";
-import { ref, uploadBytes } from "firebase/storage";
-import { db, storage } from "./firebase";
+import { db,storage } from "./backend";
+import { requireBackend } from "./backend/client";
+import { doc,getDoc,Timestamp } from "./backend/db";
+import { ref,uploadBytes } from "./backend/storage";
 
 export type SocialProfile = {
   username: string;
@@ -18,7 +19,7 @@ export const profileLink = (uid: string) => `/community?member=${encodeURICompon
 
 export function socialError(error: unknown): string {
   const code = (error as { code?: string })?.code;
-  if (code === "permission-denied" || code === "storage/unauthorized") return "This action isn’t available for your account right now. Please try again later.";
+  if (code === "42501" || code === "permission-denied" || code === "storage/unauthorized") return "This action isn’t available for your account right now. Please try again later.";
   if (code === "unavailable" || code === "storage/retry-limit-exceeded") return "Connection interrupted. Please check your connection and try again.";
   if (error instanceof Error && !code) return error.message;
   return "Something went wrong. Please try again.";
@@ -33,23 +34,11 @@ export function validateSocialProfile(values: Pick<SocialProfile, "username" | "
 
 export async function saveSocialProfile(uid: string, values: Pick<SocialProfile, "username" | "displayName" | "bio" | "photoPath">) {
   validateSocialProfile(values);
-  const username = values.username.trim().toLowerCase();
-  const publicRef = doc(db, "socialProfiles", uid);
-  const privateRef = doc(db, "users", uid);
-  const handleRef = doc(db, "socialHandles", username);
-  await runTransaction(db, async transaction => {
-    const [previous, handle, account] = await Promise.all([
-      transaction.get(publicRef), transaction.get(handleRef), transaction.get(privateRef),
-    ]);
-    if (handle.exists() && handle.data().uid !== uid) throw new Error("That username is already taken. Try another one.");
-    const data = { ...values, username, displayName: values.displayName.trim(), bio: values.bio.trim(), updatedAt: serverTimestamp() };
-    transaction.set(publicRef, { ...data, createdAt: previous.data()?.createdAt ?? serverTimestamp() });
-    if (!handle.exists()) transaction.set(handleRef, { uid });
-    const oldHandle = previous.data()?.username as string | undefined;
-    if (oldHandle && oldHandle !== username) transaction.delete(doc(db, "socialHandles", oldHandle));
-    if (account.exists()) transaction.update(privateRef, data);
-    else transaction.set(privateRef, { ...data, role: "user", points: 0, createdAt: serverTimestamp() });
+  const { error } = await requireBackend().rpc("save_profile", {
+    p_username: values.username.trim().toLowerCase(), p_display_name: values.displayName.trim(), p_bio: values.bio.trim(), p_photo_path: values.photoPath,
   });
+  if (error?.code === "23505") throw new Error("That username is already taken. Try another one.");
+  if (error) throw new Error(error.message);
 }
 
 export async function uploadAvatar(uid: string, file: File): Promise<string> {

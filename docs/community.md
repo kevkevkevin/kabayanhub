@@ -1,59 +1,25 @@
 # Community feed
 
-The `/community` page provides a chronological, text-first social feed with 500-character posts, 280-character replies, likes, follows, an Everyone/Following switch, public profile views, copyable post links, owner deletion, and private reports with an admin review queue. No social operation calls the points system, increments points, or writes reward activities. Existing non-social rewards remain unchanged.
+`/community` provides chronological text posts (500 characters), replies (280), likes, follows, Everyone/Following filters, public profiles, shareable links, owner deletion, and reports with an administrator review queue. Social interactions do not award Kabayan Points.
 
-The dashboard and Settings share the same profile editor for a unique username, display name, 160-character bio, and profile photo. Existing members publish their community profile on first save. Legacy account usernames are suggestions; community handles are reserved transactionally when the public profile is saved. The public feed resolves profile details by UID, so previous posts and replies reflect later changes. Avatar uploads are cropped and encoded to a 512×512 JPEG in the browser. JPG, PNG, and WebP inputs up to 5 MB are accepted; Storage enforces owner-only JPEG uploads up to 2 MB at a fixed per-user path. Removing a photo hides it from the public profile; the last uploaded object remains at that path until overwritten or administratively deleted.
+Dashboard and Settings share a profile editor for unique usernames, display name, bio (160 characters), and photo. `save_profile` reserves usernames with a PostgreSQL unique index and updates public/private display fields in one transaction. Public posts resolve profiles by user ID, so later edits appear on earlier posts. Account email and role are not exposed in profiles or the leaderboard.
 
 ## Data and permissions
 
-- `socialProfiles/{uid}`: public display fields only, no email or private account details.
-- `socialHandles/{username}`: one UID per handle; atomic reservation/release when renaming.
-- `socialProfiles/{uid}/following/{targetUid}`: owner-managed, owner-readable following list.
-- `socialPosts/{postId}`: immutable author UID, text, and server timestamp.
-- `socialPosts/{postId}/likes/{uid}`: one like per account; counts use aggregation queries.
-- `socialPosts/{postId}/replies/{replyId}`: replies with immutable authorship.
-- `socialReports/{postId}_{reporterUid}`: one report per account/post, readable by the reporter and administrators. Admins can dismiss or remove the reported post.
+Each feature uses its own PostgreSQL table. The repository layer in `lib/backend/db.ts` retains existing document-shaped page models while storing CMS payloads in `data` JSONB. Filtering, numeric/date ordering, pagination, and counts run on the server. This is an incremental data-model migration, not a fully normalized rewrite of every feature.
 
-Posts are fetched in pages of 20, newest first. Following queries use groups of 30 UIDs and merge results against the same timestamp/document-ID cursor. The feed refreshes after posting or via Refresh feed; it does not subscribe to the entire timeline. Replies are fetched when opened. Private account details are not copied into public profiles. The earlier client-side role-escalation fix remains enforced.
+The social tables are `social_profiles`, `social_posts`, `follows`, `likes`, `replies`, and `social_reports`. Nested records use `parent_id`. Foreign keys cascade post deletions to likes/replies and account deletions to profiles. Reports remain private to their author and administrators. The read-only `leaderboard` table contains only usernames, display names, and point balances, synchronized by a database trigger and readable by signed-in members.
 
-Deleting a post removes it from the feed and makes its reply/like collections unreadable. Firestore does not recursively delete subcollections, so a trusted cleanup job is recommended for removing orphaned documents at scale. This initial release does not include DMs, reposts, media posts, push notifications, automatic spam classification, or server-enforced posting rate limits.
+RLS enforces ownership; browser users cannot edit roles or point balances. Posts/replies cannot change authors or be edited after creation. Profile updates use an authenticated database function. Other existing reward features use server-chosen amounts and duplicate protection; the optional Tambayan lottery can award at most one winner per server-controlled round. These controls do not prove that a person read an article, shared externally, or completed a game honestly.
 
-## Local verification
+Following queries group 30 IDs and merge pages by a common timestamp/ID cursor. The feed refreshes after posting or via Refresh feed. Profiles, follows, chat, stickers, and configuration use Supabase Realtime with a visibility-aware refresh fallback. The document query interface caps an individual query at 1,000 rows; feed/reply views use explicit pagination.
 
-Requires Node dependencies and Java 21+ on PATH:
+## Images
 
-```sh
-npm run test:rules
-npm run test:social
-npx tsc --noEmit
-npx eslint app/components/social app/community lib/social.ts lib/firebase.ts
-```
+Avatar inputs accept JPG/PNG/WebP up to 5 MB, crop to 512×512, and encode as JPEG. The `avatars` bucket accepts only JPEG uploads up to 2 MB at `social/avatars/{uid}/avatar.jpg`; only that owner may overwrite/delete it. Removing a photo clears its profile reference. The prior object remains until overwritten or removed through account cleanup. `market-images` accepts administrator-managed product images up to 10 MB. Both buckets expose public images.
 
-For an isolated browser preview:
+## Verification and operation
 
-```sh
-npx firebase emulators:start --project demo-kabayan-social --only auth,firestore,storage --config firebase.social-test.json
-```
+Run `npm test` for local database permissions and Arabic-game tests. Hosted verification additionally checks real auth, Storage ownership, image downloads, profiles, social interactions, and exact preservation of the 13 news articles. See `docs/supabase-migration.md` for setup and cleanup.
 
-In another PowerShell terminal:
-
-```powershell
-$env:FIRESTORE_EMULATOR_HOST = '127.0.0.1:8089'
-node tests/seed-social-preview.cjs
-$env:NEXT_PUBLIC_USE_FIREBASE_EMULATORS = 'true'
-$env:KABAYAN_BUILD_DIR = '.kabayan-social-preview'
-npm run dev -- --port 3002
-```
-
-Open `http://localhost:3002/community`. The seed script creates local-only sample accounts and posts. Demo login: `maya@example.test` / `KabayanDemo123!`. Emulator mode uses a hard-coded demo project and rejects non-localhost browser connections. Never set `NEXT_PUBLIC_USE_FIREBASE_EMULATORS` for a production build.
-
-## Deploying the feature
-
-Local repository changes do not update Firebase. Before production use:
-
-1. Verify the intended Firebase project, existing administrators, Storage bucket configuration, and billing availability for uploads.
-2. Deploy `firestore:rules`, `firestore:indexes`, and `storage` from the provided configuration; wait for indexes to finish building. The new Storage rules preserve the repository's known administrator product-upload path, but compare them with any existing console-only rules before deployment. Preserve unrelated live indexes if the CLI proposes removal.
-3. Build and deploy the site on Vercel using the Next.js framework preset, `npm run build`, and the default output directory with emulator mode disabled. Dynamic market and news routes use the Next.js runtime; this project does not produce a static export. See the README for environment and hosting settings.
-4. Verify a real account can publish a public profile, upload its avatar, and interact with a post, then assign a community moderator to review reports. For an open public launch, add App Check and server-side rate limiting as the next abuse-control layer.
-
-No deployment or live-data migration is performed by the local test commands.
+This release does not include DMs, reposts, media posts, push notifications, automatic spam classification, or general posting rate limits. Reports are reviewed in the community administrator panel. Firebase emulator fixtures are historical and do not seed the new backend.

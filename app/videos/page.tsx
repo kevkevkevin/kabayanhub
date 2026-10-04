@@ -1,23 +1,19 @@
 // app/videos/page.tsx
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect,useMemo,useState } from "react";
+import { auth,db } from "../../lib/backend";
+import { onAuthStateChanged } from "../../lib/backend/auth";
 import {
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  increment,
-  orderBy,
-  query,
-  where,
-  serverTimestamp,
-  addDoc,
-  updateDoc,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { db, auth } from "../../lib/firebase";
+collection,
+doc,
+getDoc,
+getDocs,
+orderBy,
+query
+} from "../../lib/backend/db";
+import { claimReward } from "../../lib/backend/rewards";
 
 type VideoItem = {
   id: string;
@@ -177,38 +173,9 @@ export default function VideosPage() {
     setStatus(null);
 
     try {
-      const userRef = doc(db, "users", user.uid);
-
-      const activityRef = collection(db, "users", user.uid, "activity");
-      const q = query(
-        activityRef,
-        where("type", "==", type),
-        where("refId", "==", item.id)
-      );
-      const activitySnap = await getDocs(q);
-
-      if (!activitySnap.empty) {
-        setStatus("You already claimed KP for this tutorial.");
-        return;
-      }
-
-      const userSnap = await getDoc(userRef);
-      const currentPoints = (userSnap.data() as any)?.points ?? 0;
-
-      await Promise.all([
-        addDoc(activityRef, {
-          type,
-          refId: item.id,
-          amount,
-          createdAt: serverTimestamp(),
-        }),
-        updateDoc(userRef, {
-          points: increment(amount),
-          lastVisit: serverTimestamp(),
-        }),
-      ]);
-
-      setPoints(currentPoints + amount);
+      const result = await claimReward(type, item.id);
+      if (!result.awarded) { setStatus("You already claimed KP for this tutorial."); return; }
+      setPoints(result.points);
       setStatus(
         `+${amount} KP from ${
           type === "video_watched"

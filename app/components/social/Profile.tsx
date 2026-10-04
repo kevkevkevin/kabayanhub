@@ -2,11 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { doc, onSnapshot } from "firebase/firestore";
-import { getDownloadURL, ref } from "firebase/storage";
-import { db, storage } from "../../../lib/firebase";
-import { profileLink, type SocialProfile } from "../../../lib/social";
+import { useEffect,useState } from "react";
+import { db,storage } from "../../../lib/backend";
+import { doc,onSnapshot } from "../../../lib/backend/db";
+import { getDownloadURL,ref } from "../../../lib/backend/storage";
+import { profileLink,type SocialProfile } from "../../../lib/social";
 
 export function useSocialProfile(uid?: string) {
   const [state, setState] = useState<{ uid: string; profile: SocialProfile | null; error: boolean }>({ uid: "", profile: null, error: false });
@@ -25,7 +25,7 @@ export function Avatar({ profile, large = false }: { profile: SocialProfile | nu
   useEffect(() => {
     if (!path) return;
     let active = true;
-    getDownloadURL(ref(storage, path)).then(url => { if (active) setImage({ key, url: `${url}&v=${version}` }); }).catch(() => { if (active) setImage({ key, url: "" }); });
+    getDownloadURL(ref(storage, path)).then(url => { if (active) setImage({ key, url: `${url}${url.includes("?") ? "&" : "?"}v=${version}` }); }).catch(() => { if (active) setImage({ key, url: "" }); });
     return () => { active = false; };
   }, [path, key, version]);
   return <span className={`social-avatar ${large ? "social-avatar-large" : ""}`}>

@@ -1,20 +1,20 @@
 // app/admin/jobs/page.tsx
 "use client";
 
-import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect,useState } from "react";
+import { auth,db } from "../../../lib/backend";
+import { onAuthStateChanged } from "../../../lib/backend/auth";
 import {
-  collection,
-  getDocs,
-  doc,
-  getDoc,
-  setDoc,
-  updateDoc,
-  deleteDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { onAuthStateChanged } from "firebase/auth";
-import { auth, db } from "../../../lib/firebase";
+collection,
+deleteDoc,
+doc,
+getDoc,
+getDocs,
+serverTimestamp,
+setDoc,
+updateDoc,
+} from "../../../lib/backend/db";
 
 type Job = {
   id: string;
@@ -342,7 +342,7 @@ export default function AdminJobsPage() {
     try {
       const userDoc = await getDoc(doc(db, "users", uid));
       if (userDoc.exists()) {
-        const userData = userDoc.data();
+        const userData = userDoc.data()!;
         setSelectedUser({
           uid,
           displayName: userData.displayName,
