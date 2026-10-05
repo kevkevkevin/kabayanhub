@@ -104,6 +104,7 @@ function formatActivityType(t: string): string {
   switch (t) {
     case "daily_checkin": return "Daily check-in";
     case "news_read": return "Read news";
+    case "englishTypingRush": return "English Typing Rush reward";
     case "news_share": return "Shared news";
     case "video_watched": return "Watched tutorial";
     case "video_share": return "Shared tutorial";

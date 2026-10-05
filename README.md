@@ -13,6 +13,10 @@ npm run dev
 
 Only the publishable key belongs in `NEXT_PUBLIC_*` variables. Never put a secret/service-role key in the frontend or commit credentials. New accounts confirm their email before logging in. Existing Firebase test accounts are not migrated.
 
+English Typing Rush rewards also require `SUPABASE_SERVICE_ROLE_KEY` in `.env.local` and the Vercel server environment. This server-only key verifies completed game recordings and credits rewards; never prefix it with `NEXT_PUBLIC_`.
+
+Signed-in players can claim 1 Kabayan Point per 10 game points after completing a round. Wind scores count too. Speed increases at 500, 700, 800, and every 100 points after that, capped at 3×. The server replays a seeded round, checks its elapsed time, and credits each round once in a transaction. Replay validation prevents fabricated scores and invalid power-ups; it does not prove a player is human. Recordings support up to two hours of active play and 12,000 actions and must be claimed within 24 hours. Starting another round on the same account replaces an unfinished round; reloading loses its local recording.
+
 ## Database and deployment
 
 Migrations in `supabase/migrations` create feature tables, access policies, atomic profile/reward functions, public image buckets, and realtime subscriptions. The news migration preserves the original 13 public articles and their IDs without overwriting later edits.

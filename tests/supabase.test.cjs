@@ -16,7 +16,7 @@ const query=(table,constraints=[],parent='')=>db.query('select public.hub_query(
 const profile=(name)=>db.query('select public.save_profile($1,$2,$3,$4)',[name,name,'Hello','']);
 before(async()=>{
  db=new PGlite();
- await db.exec(`create role anon; create role authenticated; create schema auth; create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}');
+ await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}');
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
  grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;`);
  await db.exec(fs.readFileSync('supabase/migrations/202609300001_hub.sql','utf8'));
@@ -25,6 +25,7 @@ before(async()=>{
  // Model hosted default grants, which are independent of the PUBLIC role.
  await db.exec('grant execute on all functions in schema public to anon');
  await db.exec(fs.readFileSync('supabase/migrations/202610040002_permission_hardening.sql','utf8'));
+ await db.exec(fs.readFileSync('supabase/migrations/202610050001_typing_rewards.sql','utf8'));
  await db.query("insert into auth.users(id,email,raw_user_meta_data) values($1,'a@example.test','{\"role\":\"admin\"}'),($2,'b@example.test','{}')",[a,b]);
  await db.query("insert into public.news(id,data) values('article',$1::jsonb)",[json({title:'News',reward:10,shareReward:5,createdAt:'2026-09-01T00:00:00.000Z'})]);
 });
@@ -146,4 +147,27 @@ test('administrators can moderate and edit news, with one chat reward per server
   assert.equal((await db.query('select draw_chat_reward() as result')).rows[0].result,null);
   await assert.rejects(write('news','article',{title:'Not admin'},'merge'));
  });
+});
+
+test('typing rounds credit 10:1 only through trusted service and only once',async()=>{
+ const start=()=>db.query("select start_typing_round('steady') as result").then(r=>r.rows[0].result);
+ await as(null,async()=>{await assert.rejects(start());});
+ const round=await as(a,start);
+ const before=(await db.query("select (data->>'points')::integer as points from users where id=$1",[a])).rows[0].points;
+ await as(a,async()=>{
+  await assert.rejects(db.query('select credit_typing_round($1,$2,100)',[round.id,a]));
+  await assert.rejects(db.query('select * from typing_rounds'));
+ });
+ await db.exec('set role service_role');
+ try {
+  await assert.rejects(db.query('select credit_typing_round($1,$2,100)',[round.id,b]));
+  const first=(await db.query('select credit_typing_round($1,$2,100) as result',[round.id,a])).rows[0].result;
+  assert.equal(first.amount,10); assert.equal(first.points,before+10);
+  const second=(await db.query('select credit_typing_round($1,$2,800) as result',[round.id,a])).rows[0].result;
+  assert.equal(second.awarded,false); assert.equal(second.amount,10); assert.equal(second.points,before+10);
+ } finally { await db.exec('reset role'); }
+ const abandoned=await as(a,start);await as(a,start);
+ await assert.rejects(db.query('select credit_typing_round($1,$2,100)',[abandoned.id,a]));
+ assert.equal((await db.query("select count(*)::integer as n from activities where id=$1",['englishTypingRush_'+round.id])).rows[0].n,1);
+ assert.equal((await db.query("select has_function_privilege('anon','credit_typing_round(uuid,uuid,integer)','execute') as allowed")).rows[0].allowed,false);
 });

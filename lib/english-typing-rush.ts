@@ -22,6 +22,22 @@ export const LIFE_LIMIT = 5;
 export const WORD_POINTS = 10;
 export const POWER_SECONDS = 5;
 export const REFILL_WORDS = 10;
+export const TYPING_TICK_SECONDS = 0.05;
+export function scoreSpeedMultiplier(score: number) {
+  if (score < 500) return 1;
+  if (score < 700) return 1.25;
+  return Math.min(3, 1.5 + Math.floor((score - 700) / 100) * 0.2);
+}
+export function typingReward(score: number) { return Math.floor(Math.max(0, score) / 10); }
+export function seededTypingRandom(seed: number) {
+  let value = seed >>> 0;
+  return () => {
+    value = (value + 0x6d2b79f5) | 0;
+    let t = Math.imul(value ^ (value >>> 15), value | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
 const WORDS = "hello home work kind help hope calm book rain sun team smile water happy family friend morning travel coffee market school garden window people yellow future listen learn dream thank light world house phone music lunch office clean fresh quick green street ticket nature ocean bright simple welcome little brother sister together journey message weekend courage practice community tomorrow beautiful keyboard sandwich sunshine language celebrate discover remember confident opportunity".split(" ");
 const SPEED = { easy: 0.048, steady: 0.069, fast: 0.095 };
 const INTERVAL = { easy: 2.9, steady: 2.25, fast: 1.75 };
@@ -38,7 +54,7 @@ function spawn(state: TypingState, random: () => number): TypingState {
   const lanes = [0, 0.5, 1].filter(x => !state.words.some(word => word.x === x && word.y < 0.18));
   if (!lanes.length) return state;
   const x = lanes[Math.min(lanes.length - 1, Math.floor(random() * lanes.length))];
-  const speed = SPEED[state.difficulty] + Math.min(state.caught * 0.0007, 0.04);
+  const speed = SPEED[state.difficulty];
   return { ...state, nextId: state.nextId + 1, words: [...state.words, { id: state.nextId, text, x, y: 0, speed }] };
 }
 export function startTypingGame(difficulty: Difficulty, random = Math.random): TypingState {
@@ -56,16 +72,18 @@ export function advanceTypingGame(state: TypingState, seconds: number, random = 
   const frozen = Math.min(state.freezeLeft, dt);
   const movement = dt - frozen;
   let lives = state.lives;
+  const multiplier = scoreSpeedMultiplier(state.score);
   const words = state.words.flatMap(word => {
-    const y = word.y + word.speed * movement;
+    const speed = word.speed * multiplier;
+    const y = word.y + speed * movement;
     if (y < 1) return [{ ...word, y }];
-    const crossingTime = frozen + (1 - word.y) / word.speed;
+    const crossingTime = frozen + (1 - word.y) / speed;
     if (state.shieldLeft <= 0 || crossingTime > state.shieldLeft + 1e-9) lives--;
     return [];
   });
   let next: TypingState = { ...state, words, lives: Math.max(0, lives), elapsed: state.elapsed + dt, spawnElapsed: state.spawnElapsed + movement, freezeLeft: Math.max(0, state.freezeLeft - dt), shieldLeft: Math.max(0, state.shieldLeft - dt) };
   if (next.lives === 0) return { ...next, status: "over" };
-  const interval = Math.max(1.05, INTERVAL[state.difficulty] - state.caught * 0.015);
+  const interval = Math.max(0.8, INTERVAL[state.difficulty] / multiplier);
   if (movement > 0 && next.spawnElapsed >= interval) next = spawn({ ...next, spawnElapsed: next.spawnElapsed - interval }, random);
   return next;
 }

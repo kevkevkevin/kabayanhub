@@ -97,4 +97,12 @@
 @media(max-width:400px) { .typing-stats { padding:15px 2px; } .typing-stats>div { padding:0 7px; } .typing-stats .typing-lives { font-size:12px; gap:2px; } .typing-stats strong { font-size:22px; } .typing-word { font-size:11px; } .typing-arena-toolbar { padding:12px; } .typing-arena-toolbar strong { font-size:10px; } .typing-elapsed { display:none; } .typing-answer { padding:14px 12px 2px; } .typing-answer button { min-width:75px; padding:10px; } .typing-floor { font-size:6px; } }
 @media(prefers-reduced-motion:reduce) { .typing-wind-burst span { animation:none; } .typing-board { transition:none; } }
 .typing-mobile-powers { display:none; }
+.typing-reward-bar { display:flex; align-items:center; justify-content:space-between; gap:14px; background:var(--kh-yellow-soft); border:1px solid var(--kh-border); padding:14px 18px; border-radius:12px; margin-bottom:16px; }
+.typing-reward-bar>div { display:flex; flex-direction:column; gap:3px; }
+.typing-reward-bar strong { font-size:21px; font-weight:700; }
+.typing-reward-bar span { font-size:11px; color:var(--kh-text-secondary); }
+.typing-reward-error,.typing-reward-success { padding:12px 16px; font-size:12px; border:1px solid var(--kh-border); border-radius:9px; margin-bottom:15px; background:var(--kh-bg-card); }
+.typing-reward-error { color:var(--kh-text); border-color:var(--kh-red); }
+.typing-speed { font-size:9px; color:var(--kh-link); background:var(--kh-blue-soft); border-radius:5px; padding:2px 6px; white-space:nowrap; }
+@media(max-width:520px) { .typing-arena-toolbar>div { gap:6px; } .typing-arena-toolbar strong { max-width:80px; } .typing-reward-bar { padding:12px; } .typing-reward-bar button { font-size:11px; padding:9px 11px; } }
 @media(max-width:760px) { .typing-mobile-powers { display:flex; gap:6px; padding:10px 12px 0; } .typing-mobile-powers button { flex:1; display:flex; justify-content:center; align-items:center; gap:5px; font-size:11px; font-weight:600; padding:10px 4px; border:1px solid var(--kh-border); border-radius:8px; color:var(--kh-link); background:var(--kh-blue-soft); } .typing-mobile-powers button:disabled { opacity:.5; } .typing-mobile-powers small { font-size:9px; color:var(--kh-text-muted); } .typing-sidebar .typing-power-list { display:none; } .typing-refill { margin-top:15px; } }
