@@ -12,6 +12,7 @@ import Icon from "./Icon";
 const groups = [
   { label: "Learn", links: [
     ["Video tutorials", "/videos"], ["Arabic quiz", "/arabic-quiz"],
+    ["English Typing Rush", "/english-typing-rush"],
     ["Arabic Word Rush", "/arabic-word-rush"], ["Baybayin translator", "/baybayin"], ["Baybayin cards", "/baybayin-card"],
   ] },
   { label: "Daily tools", links: [["Budget tracker", "/budget"], ["Calorie tracker", "/calorie-tracker"]] },
