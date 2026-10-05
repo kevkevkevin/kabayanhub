@@ -6,12 +6,18 @@ const convert = (user: SupabaseUser | null): User | null => user ? ({ uid: user.
 export const auth: { currentUser: User | null } = { currentUser: null };
 export function onAuthStateChanged(_auth: typeof auth, listener: (user: User | null) => void) {
   // Supabase emits INITIAL_SESSION after loading the persisted browser session.
-  // Defer application callbacks: querying inside its auth lock can deadlock.
+  // It also repeats SIGNED_IN on tab focus and TOKEN_REFRESHED in the background.
+  // Those are not account changes: rebuilding subscribers would discard drafts.
   let active = true;
+  let previous: string | undefined;
   const { data } = supabase.auth.onAuthStateChange((_event, session) => {
     auth.currentUser = convert(session?.user || null);
     const user = auth.currentUser;
-    queueMicrotask(() => { if (active) listener(user); });
+    const identity = JSON.stringify(user);
+    if (identity === previous) return;
+    previous = identity;
+    // Run in a later task so Supabase releases its auth lock before app queries.
+    setTimeout(() => { if (active) listener(user); }, 0);
   });
   return () => { active = false; data.subscription.unsubscribe(); };
 }

@@ -37,11 +37,19 @@ export default function AdminShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     let active = true;
     let generation = 0;
+    let watchedUid: string | null = null;
     let stopProfile = () => {};
     const stopAuth = onAuthStateChanged(auth, user => {
+      if (!active) return;
+      // A profile update for this account must not unmount the editor. The live
+      // role subscription below still removes access if admin rights change.
+      if (user && user.uid === watchedUid) {
+        setState(previous => previous.user ? { ...previous, user } : previous);
+        return;
+      }
+      watchedUid = user?.uid ?? null;
       const current = ++generation;
       stopProfile();
-      if (!active) return;
       if (!user) { setState({ user: null, loading: false, error: "Sign in with your administrator account to continue." }); return; }
       setState({ user: null, loading: true, error: "" });
       stopProfile = onSnapshot(doc(db, "users", user.uid), snapshot => {
