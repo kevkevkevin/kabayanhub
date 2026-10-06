@@ -159,7 +159,7 @@ export default function NewsPage() {
           className="group block overflow-hidden rounded-3xl border border-[var(--kh-border)] bg-[var(--kh-bg-card)] shadow-[var(--kh-card-shadow)] transition hover:-translate-y-0.5 hover:shadow-xl"
         >
           <div className="grid md:grid-cols-[1.1fr_0.9fr]">
-            <div className="relative aspect-square w-full self-start">
+            <div className="relative min-h-[220px] md:min-h-[320px]">
               <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
