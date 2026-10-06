@@ -797,7 +797,7 @@ export default function ContentManager({ initialTab = "videos" }: { initialTab?:
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
-                    Header image URL (optional)
+                    Header image URL (optional · 1080 × 1080 recommended)
                   </label>
                   <input
                     className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-xs text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
@@ -985,7 +985,7 @@ Starting this month, OFWs must ensure:
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
-                    Thumbnail URL (optional)
+                    Thumbnail URL (optional · 1080 × 1080 recommended)
                   </label>
                   <input
                     className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-xs text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"
@@ -1189,7 +1189,7 @@ Starting this month, OFWs must ensure:
                 </div>
                 <div className="space-y-1">
                   <label className="text-[11px] font-medium text-[var(--kh-text-secondary)]">
-                    Image URL (optional)
+                    Image URL (optional · 1080 × 1080 recommended)
                   </label>
                   <input
                     className="w-full rounded-xl border border-[var(--kh-border)] bg-[var(--kh-bg)] px-3 py-2 text-xs text-[var(--kh-text)] outline-none focus:border-[var(--kh-blue)]"

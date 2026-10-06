@@ -191,10 +191,12 @@ export default function MarketplacePage() {
             >
               <div className="space-y-2">
                 {item.imageUrl && (
-                  <div className="mb-2 h-32 w-full overflow-hidden rounded-xl bg-[var(--kh-bg-subtle)]">
+                  <div className="mb-2 aspect-square w-full overflow-hidden rounded-xl bg-[var(--kh-bg-subtle)]">
                     <img
                       src={item.imageUrl}
                       alt={item.title}
+                      width={1080}
+                      height={1080}
                       className="h-full w-full object-cover"
                     />
                   </div>
