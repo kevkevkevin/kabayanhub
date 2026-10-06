@@ -521,6 +521,16 @@ h1, h2, h3 { letter-spacing: -.035em; line-height: 1.22; }
 .social-member > span { font-size:13px; color:var(--kh-text-muted); }
 .social-member > p { font-size:14px; line-height:1.7; margin-top:12px; white-space:pre-wrap; overflow-wrap:anywhere; }
 .social-profile-editor { scroll-margin-top:110px; }
+.dashboard-edit-profile { display:inline-flex; align-items:center; gap:7px; margin-top:10px; padding:7px 11px; border:1px solid #ffffff45; border-radius:8px; color:#fff; background:#ffffff12; font-size:12px; font-weight:600; cursor:pointer; }
+.dashboard-edit-profile:hover { background:#ffffff25; }
+.dashboard-edit-profile:focus-visible { outline:2px solid var(--kh-yellow); outline-offset:3px; }
+.profile-editor-popup { margin:auto; width:min(680px,calc(100vw - 24px)); max-height:calc(100dvh - 32px); padding:0; border:1px solid var(--kh-border); border-radius:20px; color:var(--kh-text); background:var(--kh-bg-card); box-shadow:0 24px 80px #071b3d40; overflow:auto; overscroll-behavior:contain; }
+.profile-editor-popup::backdrop { background:#071b3d99; backdrop-filter:blur(4px); }
+.profile-editor-popup .social-profile-editor { margin:0; padding:52px 28px 28px; border:0; box-shadow:none; border-radius:0; }
+.profile-popup-close { position:absolute; top:12px; right:12px; display:grid; place-items:center; width:32px; height:32px; border:1px solid var(--kh-border); border-radius:50%; background:var(--kh-bg-subtle); color:var(--kh-text); cursor:pointer; }
+.profile-popup-close:hover { background:var(--kh-blue-soft); }
+.profile-popup-close:focus-visible { outline:2px solid var(--kh-blue); outline-offset:3px; }
+@media (max-width:600px) { .profile-editor-popup .social-profile-editor { padding:48px 18px 22px; } }
 .social-editor-heading { display:flex; justify-content:space-between; gap:20px; align-items:center; margin-bottom:25px; }
 .social-editor-heading h2 { font-size:25px; font-weight:750; margin:7px 0; letter-spacing:-.7px; }
 .social-editor-heading p:last-child { font-size:13px; color:var(--kh-text-muted); }

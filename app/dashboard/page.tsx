@@ -16,7 +16,7 @@ where
 } from "../../lib/backend/db";
 import { claimReward } from "../../lib/backend/rewards";
 import { Avatar,useSocialProfile } from "../components/social/Profile";
-import ProfileEditor from "../components/social/ProfileEditor";
+import ProfileEditorPopup from "../components/social/ProfileEditorPopup";
 
 // --- TYPES ---
 type ActivityItem = {
@@ -310,6 +310,7 @@ export default function DashboardPage() {
               <div>
                  <p className="text-blue-200 text-sm font-medium mb-1 uppercase tracking-wider">Welcome back</p>
                  <h1 className="text-2xl md:text-4xl font-bold text-white tracking-tight">{greetingName}</h1>
+                 {user && <ProfileEditorPopup key={user.uid} uid={user.uid} onSaved={profile => { setUsername(profile.username); setDisplayName(profile.displayName); }} />}
                  <p className="text-xs text-blue-100/80 mt-1 max-w-sm">
                    Stay active and keep earning!
                  </p>
@@ -327,8 +328,6 @@ export default function DashboardPage() {
            </div>
         </div>
       </section>
-
-      {user && <ProfileEditor key={user.uid} uid={user.uid} onSaved={profile => { setUsername(profile.username); setDisplayName(profile.displayName); }} />}
 
       {/* ───────── ALERTS ───────── */}
       {status && (
