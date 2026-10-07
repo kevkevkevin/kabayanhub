@@ -14,6 +14,8 @@ async function as(uid,fn){
 const write=(table,id,data,mode='set',parent='')=>db.query('select public.hub_write($1,$2,$3,$4::jsonb,$5)',[table,parent,id,json(data),mode]);
 const query=(table,constraints=[],parent='')=>db.query('select public.hub_query($1,$2,$3::jsonb) as rows',[table,parent,json(constraints)]).then(r=>r.rows[0].rows);
 const profile=(name)=>db.query('select public.save_profile($1,$2,$3,$4)',[name,name,'Hello','']);
+const coinWallet=()=>db.query('select public.get_arcade_wallet() as wallet').then(r=>r.rows[0].wallet);
+const coinSpin=(id,stake=10)=>db.query('select public.play_kabayan_cascade($1,$2) as result',[id,stake]).then(r=>r.rows[0].result);
 before(async()=>{
  db=new PGlite();
  await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}');
@@ -25,11 +27,89 @@ before(async()=>{
  // Model hosted default grants, which are independent of the PUBLIC role.
  await db.exec('grant execute on all functions in schema public to anon');
  await db.exec(fs.readFileSync('supabase/migrations/202610040002_permission_hardening.sql','utf8'));
- await db.exec(fs.readFileSync('supabase/migrations/202610050001_typing_rewards.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/202610050001_typing_rewards.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/202610070001_kabayan_coins.sql','utf8'));
  await db.query("insert into auth.users(id,email,raw_user_meta_data) values($1,'a@example.test','{\"role\":\"admin\"}'),($2,'b@example.test','{}')",[a,b]);
  await db.query("insert into public.news(id,data) values('article',$1::jsonb)",[json({title:'News',reward:10,shareReward:5,createdAt:'2026-09-01T00:00:00.000Z'})]);
 });
 after(async()=>{await db?.close();});
+
+test('arcade coins are private, immutable from clients, and separate from redeemable points',async()=>{
+ const before=(await db.query('select data from public.users where id=$1',[a])).rows[0].data.points;
+ await as(null,async()=>{await assert.rejects(coinWallet());await assert.rejects(coinSpin(a));});
+ await as(a,async()=>{
+  const first=await coinWallet();assert.equal(first.balance,1000);assert.equal(first.history.length,1);assert.equal(first.history[0].kind,'starter');
+  assert.equal((await coinWallet()).balance,1000);
+  for(const table of ['arcade_wallets','arcade_rounds','arcade_game_states','arcade_transactions']) {
+   assert.equal((await db.query("select has_table_privilege('authenticated',$1,'insert') as allowed",['public.'+table])).rows[0].allowed,false);
+   assert.equal((await db.query("select has_table_privilege('authenticated',$1,'update') as allowed",['public.'+table])).rows[0].allowed,false);
+  }
+  await assert.rejects(db.query('update public.arcade_wallets set balance=999999 where user_id=$1',[a]));
+  await assert.rejects(db.query("select public.claim_reward('arcade_coin','',1000)"));
+ });
+ await as(b,async()=>{assert.equal((await db.query('select * from public.arcade_wallets where user_id=$1',[a])).rows.length,0);assert.equal((await coinWallet()).balance,1000);});
+ assert.equal((await db.query('select data from public.users where id=$1',[a])).rows[0].data.points,before);
+ for(const fn of ['ensure_arcade_wallet(uuid)','arcade_symbol()','arcade_matches(jsonb,integer)']) assert.equal((await db.query("select has_function_privilege('authenticated',$1,'execute') as allowed",['hub_private.'+fn])).rows[0].allowed,false);
+});
+
+test('daily free coin refill credits once and resets by the server Saudi date',async()=>{
+ await as(a,async()=>{
+  await db.query('select refill_arcade_wallet()');await db.query('select refill_arcade_wallet()');
+  const wallet=await coinWallet();assert.equal(wallet.balance,1500);assert.equal(wallet.canRefill,false);
+  assert.equal(wallet.history.filter(x=>x.kind==='daily_refill').length,1);
+ });
+ await db.query("update public.arcade_wallets set last_refill=(clock_timestamp() at time zone 'Asia/Riyadh')::date-1 where user_id=$1",[a]);
+ await as(a,async()=>{assert.equal((await coinWallet()).canRefill,true);await db.query('select refill_arcade_wallet()');assert.equal((await coinWallet()).balance,2000);});
+});
+
+test('cascade matches count anywhere, exclude scatters, and apply symbol tiers',async()=>{
+ const board=[...Array(8).fill(0),...Array(10).fill(2),...Array(12).fill(8)];
+ const m=(await db.query('select hub_private.arcade_matches($1::jsonb,100) as result',[json(board)])).rows[0].result;
+ assert.equal(m.coins,70);assert.equal(m.positions.length,18);assert.deepEqual(m.wins,[{symbol:0,count:8,coins:10},{symbol:2,count:10,coins:60}]);
+ assert.equal((await db.query('select hub_private.arcade_matches($1::jsonb,100) as result',[json(Array(30).fill(7))])).rows[0].result.coins,600);
+});
+
+test('server cascade rounds charge once, recover the same result, and record net coin history',async()=>{
+ await as(a,async()=>{
+  const before=(await coinWallet()).balance;
+  const id='33333333-3333-4333-8333-333333333333';
+  const [first,retry]=await Promise.all([coinSpin(id,25),coinSpin(id,100)]);
+  assert.deepEqual(first,retry);assert.equal(first.cost,25);assert.equal(first.balance,before-25+first.win);
+  assert.ok(first.stages.length>=1 && first.stages.length<=12);
+  for(const stage of first.stages){assert.equal(stage.board.length,30);assert.ok(stage.board.every(x=>Number.isInteger(x)&&x>=0&&x<=8));assert.equal(stage.coins,stage.wins.reduce((n,w)=>n+w.coins,0));}
+  assert.equal(first.win,Math.min(100000,first.baseWin*first.multiplier));
+  assert.equal((await db.query('select * from public.arcade_transactions where round_id=$1',[id])).rows.length,1);
+  assert.equal((await coinWallet()).lastRound.id,id);
+  await assert.rejects(coinSpin('44444444-4444-4444-8444-444444444444',-10));
+  await assert.rejects(coinSpin('44444444-4444-4444-8444-444444444444',15));
+ });
+ await as(b,async()=>{assert.equal((await db.query('select * from public.arcade_rounds where user_id=$1',[a])).rows.length,0);});
+});
+
+test('mascot scatters award bonus spins; bonus uses the saved stake and costs no coins',async()=>{
+ const migration=fs.readFileSync('supabase/migrations/202610070001_kabayan_coins.sql','utf8');
+ const original=migration.match(/create function hub_private\.arcade_symbol\(\)[\s\S]*?end \$\$;/)[0].replace('create function','create or replace function');
+ await db.exec("create or replace function hub_private.arcade_symbol() returns integer language sql volatile set search_path='' as $$ select 8 $$;");
+ try {
+  const start=await as(b,()=>coinSpin('55555555-5555-4555-8555-555555555555',50));
+  assert.equal(start.bonusAdded,8);assert.equal(start.bonusSpins,8);assert.equal(start.cost,50);assert.equal(start.win,0);
+  await db.query("update public.arcade_rounds set created_at=clock_timestamp()-interval '2 seconds' where user_id=$1",[b]);
+  await db.query('update public.arcade_wallets set balance=0 where user_id=$1',[b]);
+  const free=await as(b,()=>coinSpin('66666666-6666-4666-8666-666666666666',100));
+  assert.equal(free.wasBonus,true);assert.equal(free.stake,50);assert.equal(free.cost,0);assert.equal(free.balance,0);assert.equal(free.bonusSpins,10);assert.equal(free.bonusAdded,3);
+  await db.exec("create or replace function hub_private.arcade_symbol() returns integer language sql volatile set search_path='' as $$ select 0 $$;");
+  await db.query('update public.arcade_game_states set multiplier=5 where user_id=$1',[b]);
+  await db.query("update public.arcade_rounds set created_at=clock_timestamp()-interval '2 seconds' where user_id=$1",[b]);
+  const boosted=await as(b,()=>coinSpin('88888888-8888-4888-8888-888888888888',10));
+  assert.equal(boosted.cost,0);assert.equal(boosted.stake,50);assert.equal(boosted.stages.length,12);assert.equal(boosted.capped,true);
+  assert.equal(boosted.baseWin,180);assert.ok(boosted.multiplier>=5 && boosted.multiplier<=100);
+  assert.equal(boosted.win,boosted.baseWin*boosted.multiplier);assert.equal(boosted.bonusMultiplier,boosted.multiplier);assert.equal(boosted.bonusSpins,9);
+  await db.query('update public.arcade_game_states set bonus_spins=0 where user_id=$1',[b]);
+  await db.query('update public.arcade_wallets set balance=0 where user_id=$1',[b]);
+  await db.query("update public.arcade_rounds set created_at=clock_timestamp()-interval '2 seconds' where user_id=$1",[b]);
+  await as(b,()=>assert.rejects(coinSpin('77777777-7777-4777-8777-777777777777',10),/Not enough/));
+ } finally {await db.exec(original);}
+});
 test('privileged RPCs reject anonymous execution and leaderboard is read-only',async()=>{
  const signatures=['save_profile(text,text,text,text)','claim_reward(text,text,integer)','redeem_item(text)','draw_chat_reward()','hub_write(text,text,text,jsonb,text)'];
  for(const signature of signatures){

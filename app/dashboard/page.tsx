@@ -17,6 +17,7 @@ where
 import { claimReward } from "../../lib/backend/rewards";
 import { Avatar,useSocialProfile } from "../components/social/Profile";
 import ProfileEditorPopup from "../components/social/ProfileEditorPopup";
+import CoinWalletCard from "../components/arcade/CoinWallet";
 
 // --- TYPES ---
 type ActivityItem = {
@@ -330,6 +331,7 @@ export default function DashboardPage() {
       </section>
 
       {/* ───────── ALERTS ───────── */}
+      {user && <CoinWalletCard key={user.uid} uid={user.uid} />}
       {status && (
         <div className="animate-bounce-in rounded-2xl border border-emerald-200 bg-white px-5 py-4 text-sm font-bold text-emerald-600 shadow-md flex items-center gap-3">
           <span className="text-2xl">🎉</span> {status}

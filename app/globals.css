@@ -521,6 +521,15 @@ h1, h2, h3 { letter-spacing: -.035em; line-height: 1.22; }
 .social-member > span { font-size:13px; color:var(--kh-text-muted); }
 .social-member > p { font-size:14px; line-height:1.7; margin-top:12px; white-space:pre-wrap; overflow-wrap:anywhere; }
 .social-profile-editor { scroll-margin-top:110px; }
+.coin-balance { display:inline-flex; align-items:center; gap:9px; flex-wrap:wrap; }
+.coin-balance > strong { font-size:24px; letter-spacing:-.8px; font-variant-numeric:tabular-nums; }
+.coin-balance > span:last-child { font-size:11px; color:var(--kh-text-muted); }
+.coin-token { display:inline-grid; place-items:center; width:29px; height:29px; border-radius:50%; color:#644914; background:linear-gradient(135deg,#ffefaa,#edbb39); border:2px solid #ddb03b; font-size:16px; font-weight:900; box-shadow:inset 0 0 0 2px #fff7d8; }
+.dashboard-coins { display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap; }
+.dashboard-coins .coin-balance { margin:7px 0; }
+.dashboard-coins p:not(.kh-eyebrow) { font-size:12px; color:var(--kh-text-muted); max-width:480px; }
+.dashboard-coins-actions { display:flex; gap:10px; flex-wrap:wrap; }
+.dashboard-coins-actions .kh-button { font-size:12px; }
 .dashboard-edit-profile { display:inline-flex; align-items:center; gap:7px; margin-top:10px; padding:7px 11px; border:1px solid #ffffff45; border-radius:8px; color:#fff; background:#ffffff12; font-size:12px; font-weight:600; cursor:pointer; }
 .dashboard-edit-profile:hover { background:#ffffff25; }
 .dashboard-edit-profile:focus-visible { outline:2px solid var(--kh-yellow); outline-offset:3px; }

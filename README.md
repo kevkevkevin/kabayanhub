@@ -33,6 +33,12 @@ Configure Supabase Auth with the production site URL and exact `/login` confirma
 
 See [migration and administration](docs/supabase-migration.md) and [community implementation](docs/community.md).
 
+## Kabayan Coin arcade
+
+`/kabayan-cascade` uses free Kabayan Coins, a separate, non-transferable currency with no cash or reward value. Coins cannot be bought, redeemed, or converted to Kabayan Points. Each account receives 1,000 coins when its arcade wallet is first opened and can claim 500 more once per Saudi calendar day. The dashboard displays the shared balance; the game shows recent transactions.
+
+The migration `202610070001_kabayan_coins.sql` owns the wallet, per-game bonus state, saved results, and transaction history. Only authenticated RPCs can grant or spend coins; browsers have read access only to their own rows. Cascades, random symbols, multipliers, and bonus turns are computed in PostgreSQL. Wallet row locks and per-user request IDs make spending atomic and retries idempotent. Pending request IDs are kept locally so a reload can recover an interrupted spin. Future coin games must use the same wallet lock and transaction ledger through reviewed server functions; no generic client credit endpoint is exposed. Existing KP-earning games retain their existing reward behavior.
+
 ## Verification
 
 ```sh
