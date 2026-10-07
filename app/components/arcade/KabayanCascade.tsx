@@ -15,7 +15,7 @@ const symbols = [
   { name: "Heart", icon: "❤️", rate: "120%" }, { name: "Sun", icon: "☀️", rate: "200%" },
   { name: "Kabayan scatter", icon: "", rate: "BONUS" },
 ];
-const idleBoard = Array.from({ length: 30 }, (_, i) => (i * 3 + Math.floor(i / 5)) % 8);
+const idleBoard = Array.from({ length: 30 }, (_, i) => (i * 3 + Math.floor(i / 4)) % 8);
 type Pending = { id: string; stake: number };
 
 export default function KabayanCascade() {
