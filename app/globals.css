@@ -530,6 +530,16 @@ h1, h2, h3 { letter-spacing: -.035em; line-height: 1.22; }
 .dashboard-coins p:not(.kh-eyebrow) { font-size:12px; color:var(--kh-text-muted); max-width:480px; }
 .dashboard-coins-actions { display:flex; gap:10px; flex-wrap:wrap; }
 .dashboard-coins-actions .kh-button { font-size:12px; }
+.dashboard-coins { scroll-margin-top:100px; }
+.coin-converter { flex-basis:100%; border-top:1px solid var(--kh-border); padding-top:18px; }
+.coin-converter h3 { font-size:15px; font-weight:750; margin-bottom:5px; }
+.coin-converter-controls { display:flex; align-items:end; gap:14px; flex-wrap:wrap; margin-top:15px; }
+.coin-converter-controls label { display:flex; flex-direction:column; gap:6px; font-size:12px; font-weight:600; }
+.coin-converter-controls input { width:150px; border:1px solid var(--kh-border); border-radius:9px; padding:11px; color:var(--kh-text); background:var(--kh-bg-card); }
+.coin-converter-controls output { padding:12px 0; font-size:15px; font-weight:750; color:var(--kh-blue); }
+.coin-converter-controls button { font-size:12px; }
+.coin-converter > p { margin-top:10px; }
+.dashboard-coins .coin-conversion-success { color:var(--kh-blue); font-weight:600; }
 .dashboard-edit-profile { display:inline-flex; align-items:center; gap:7px; margin-top:10px; padding:7px 11px; border:1px solid #ffffff45; border-radius:8px; color:#fff; background:#ffffff12; font-size:12px; font-weight:600; cursor:pointer; }
 .dashboard-edit-profile:hover { background:#ffffff25; }
 .dashboard-edit-profile:focus-visible { outline:2px solid var(--kh-yellow); outline-offset:3px; }

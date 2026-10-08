@@ -109,7 +109,8 @@ function formatActivityType(t: string): string {
     case "news_share": return "Shared news";
     case "video_watched": return "Watched tutorial";
     case "video_share": return "Shared tutorial";
-    case "market_redeem": return "Redeemed reward";
+    case "market_redeem": return "Collected virtual item";
+    case "coin_conversion": return "Coins converted to KP";
     default: return t.replace(/_/g, " ");
   }
 }
@@ -149,6 +150,26 @@ export default function DashboardPage() {
   const [status, setStatus] = useState<string | null>(null);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [showAllActivity, setShowAllActivity] = useState(false);
+
+  async function refreshConvertedPoints() {
+    const uid = user?.uid;
+    if (!uid) return;
+    try {
+      const [account, recent, ranks] = await Promise.all([
+        getDoc(doc(db, "users", uid)),
+        getDocs(query(collection(db, "users", uid, "activity"), orderBy("createdAt", "desc"), limit(20))),
+        getDocs(query(collection(db, "leaderboard"), orderBy("points", "desc"), limit(10))),
+      ]);
+      if (auth.currentUser?.uid !== uid) return;
+      setPoints(account.data()?.points ?? 0);
+      const items: ActivityItem[] = [];
+      recent.forEach(snap => { const data = snap.data(); items.push({ id: snap.id, type: data.type, amount: data.amount ?? 0, createdAt: data.createdAt }); });
+      setActivity(items);
+      const leaders: LeaderEntry[] = [];
+      ranks.forEach(snap => { const data = snap.data(); leaders.push({ id: snap.id, name: data.username || data.displayName || "Kabayan", points: data.points ?? 0 }); });
+      setLeaderboard(leaders);
+    } catch { setError("Your conversion is saved. Refresh the page to reload your latest KP and activity."); }
+  }
 
   /* ─────────── Load user + stats ─────────── */
   useEffect(() => {
@@ -331,7 +352,7 @@ export default function DashboardPage() {
       </section>
 
       {/* ───────── ALERTS ───────── */}
-      {user && <CoinWalletCard key={user.uid} uid={user.uid} />}
+      {user && <CoinWalletCard key={user.uid} uid={user.uid} onConverted={() => void refreshConvertedPoints()} />}
       {status && (
         <div className="animate-bounce-in rounded-2xl border border-emerald-200 bg-white px-5 py-4 text-sm font-bold text-emerald-600 shadow-md flex items-center gap-3">
           <span className="text-2xl">🎉</span> {status}
@@ -565,7 +586,7 @@ export default function DashboardPage() {
                     <span className={`text-[10px] font-bold px-2.5 py-1 rounded-lg uppercase tracking-wide ${
                       item.status === 'redeemed' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
                     }`}>
-                      {item.status === 'redeemed' ? 'Sent' : 'Pending'}
+                      {item.status === 'redeemed' ? 'Collected' : 'Saved'}
                     </span>
                  </div>
                ))

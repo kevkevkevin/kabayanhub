@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { auth } from "../../../lib/backend/auth";
 import { getArcadeWallet, refillArcadeWallet, type ArcadeWallet } from "../../../lib/backend/arcade";
 import Icon from "../Icon";
+import CoinConverter from "./CoinConverter";
 
 export function useCoinWallet(uid: string) {
   const [wallet, setWallet] = useState<ArcadeWallet | null>(null);
@@ -45,7 +46,7 @@ export function CoinRefill({ wallet, onRefilled }: { wallet: ArcadeWallet; onRef
   }
   return <div><button type="button" className="kh-button kh-button-secondary" disabled={busy || !wallet.canRefill} onClick={() => void claim()}><Icon name="gift" width={16} />{busy ? "Adding coins…" : wallet.canRefill ? "+500 daily free coins" : "Daily coins claimed"}</button>{error && <p role="alert" className="social-error">{error}</p>}</div>;
 }
-export default function CoinWalletCard({ uid }: { uid: string }) {
+export default function CoinWalletCard({ uid, onConverted }: { uid: string; onConverted: () => void }) {
   const { wallet, error, refresh } = useCoinWallet(uid);
-  return <section className="kh-card dashboard-coins" aria-label="Kabayan Coin wallet"><div><p className="kh-eyebrow">YOUR ARCADE WALLET</p><CoinBalance balance={wallet?.balance} /><p>Saved to your account. Free play coins for Kabayan games, separate from redeemable KP.</p></div><div className="dashboard-coins-actions">{wallet && <CoinRefill wallet={wallet} onRefilled={() => void refresh()} />}<Link className="kh-button kh-button-primary" href="/kabayan-cascade">Play Kabayan Cascade <Icon name="play" width={16} /></Link></div>{error && <p role="alert" className="social-error">{error} <button onClick={() => void refresh()}>Retry</button></p>}</section>;
+  return <section id="coin-wallet" className="kh-card dashboard-coins" aria-label="Kabayan Coin wallet"><div><p className="kh-eyebrow">YOUR ARCADE WALLET</p><CoinBalance balance={wallet?.balance} /><p>Saved to your account. Use coins in the arcade or convert them to play-only KP.</p></div><div className="dashboard-coins-actions">{wallet && <CoinRefill wallet={wallet} onRefilled={() => void refresh()} />}<Link className="kh-button kh-button-primary" href="/kabayan-cascade">Play Kabayan Cascade <Icon name="play" width={16} /></Link></div>{wallet && <CoinConverter uid={uid} balance={wallet.balance} onConverted={() => { void refresh(); onConverted(); }} />}{error && <p role="alert" className="social-error">{error} <button onClick={() => void refresh()}>Retry</button></p>}</section>;
 }

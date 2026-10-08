@@ -40,7 +40,22 @@ async function main() {
     assert.equal(wallet.history.filter((row: { kind: string }) => row.kind === "round").length, 1);
     assert.ok((await client.from("arcade_wallets").update({ balance: 999999 }).eq("user_id", uid)).error);
     assert.equal((await rpc("get_arcade_wallet")).balance, wallet.balance);
-    console.log("PASS: hosted starter coins, daily refill concurrency, saved rounds, one charge per request, and direct-write rejection.");
+    const conversionId = randomUUID();
+    const convert = () => rpc("convert_arcade_coins", { p_request_id: conversionId, p_coins: 100 });
+    const [converted, recovered] = await Promise.all([convert(), convert()]);
+    assert.deepEqual(converted, recovered);
+    assert.equal(converted.earned, 10);
+    assert.equal(converted.points, 10);
+    assert.equal((await rpc("get_arcade_wallet")).balance, wallet.balance - 100);
+    const profile = await client.from("users").select("data").eq("id", uid).single();
+    assert.ifError(profile.error);
+    assert.equal(profile.data!.data.points, 10);
+    const activity = await client.from("activities").select("id,data").eq("parent_id", uid).eq("id", `coin_conversion_${conversionId}`);
+    assert.ifError(activity.error);
+    assert.equal(activity.data!.length, 1);
+    assert.equal(activity.data![0].data.amount, 10);
+    assert.ok((await client.rpc("convert_arcade_coins", { p_request_id: randomUUID(), p_coins: 11 })).error);
+    console.log("PASS: hosted wallet, refill/round/conversion concurrency, 10:1 KP credit, one activity per conversion, and invalid/direct-write rejection.");
   } finally {
     assert.ifError((await admin.auth.admin.deleteUser(uid)).error);
     console.log("Disposable arcade verification account removed.");

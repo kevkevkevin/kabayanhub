@@ -27,8 +27,6 @@ type MarketplaceItem = {
   stock?: number | null; // null means unlimited stock
 };
 
-const ADMIN_WHATSAPP = "966500000000"; // 👈 REPLACE with your real WhatsApp (no +, no spaces)
-const ADMIN_EMAIL = "admin@kabayanhub.com"; // 👈 REPLACE with your real email
 
 export default function MarketplacePage() {
   const router = useRouter();
@@ -144,8 +142,8 @@ export default function MarketplacePage() {
           Your points. Your possibilities.
         </h1>
         <p className="text-sm text-[var(--kh-text-secondary)]">
-          Use your Kabayan Points to redeem digital perks, tools, and future
-          rewards curated for OFWs. Limited stocks per item, so unahan na.
+          Use your play-only Kabayan Points to collect virtual items.
+          Coins, KP, and all items here have no cash or real-world reward value. Item names and images are for fun only; nothing is delivered or redeemable outside the hub.
         </p>
 
         {points !== null && (
@@ -202,11 +200,9 @@ export default function MarketplacePage() {
                   </div>
                 )}
 
-                {item.tag && (
                   <span className="inline-flex rounded-full bg-[var(--kh-blue-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--kh-blue)]">
-                    {item.tag}
+                    Virtual collectible
                   </span>
-                )}
 
                 <h2 className="text-sm font-semibold text-[var(--kh-text)] md:text-base">
                   {item.title}
@@ -268,7 +264,7 @@ export default function MarketplacePage() {
         <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 px-4">
           <div className="w-full max-w-sm rounded-2xl bg-[var(--kh-bg-card)] p-5 shadow-xl">
             <h2 className="text-sm font-semibold text-[var(--kh-text)]">
-              Thanks for redeeming! 🎉
+              Added to your collection! 🎉
             </h2>
             <p className="mt-2 text-xs text-[var(--kh-text-secondary)]">
               You redeemed{" "}
@@ -276,32 +272,10 @@ export default function MarketplacePage() {
               <span className="font-semibold">
                 {redeemSuccess.price} Kabayan Points
               </span>
-              . If this item needs coordination, you can contact the Kabayan Hub
-              admin below.
+              . This is a virtual collectible saved to your profile, with no physical delivery, voucher, or cash value.
             </p>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <a
-                href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(
-                  `Hi Kabayan Hub, I redeemed "${redeemSuccess.title}" using my account and would like to claim it.`
-                )}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex flex-1 items-center justify-center rounded-full bg-emerald-500 px-3 py-1.5 text-[11px] font-semibold text-white hover:brightness-110"
-              >
-                WhatsApp admin
-              </a>
-              <a
-                href={`mailto:${ADMIN_EMAIL}?subject=${encodeURIComponent(
-                  `Kabayan Hub redemption – ${redeemSuccess.title}`
-                )}&body=${encodeURIComponent(
-                  `Hi Kabayan Hub,\n\nI redeemed "${redeemSuccess.title}" and would like to claim the reward.\n\nSalamat!\n`
-                )}`}
-                className="inline-flex flex-1 items-center justify-center rounded-full border border-[var(--kh-border)] bg-[var(--kh-bg-subtle)] px-3 py-1.5 text-[11px] font-semibold text-[var(--kh-text)] hover:bg-[var(--kh-bg-card)]"
-              >
-                Email admin
-              </a>
-            </div>
+            <Link href="/dashboard" className="kh-inline-link">View my collection →</Link>
 
             <button
               onClick={() => setRedeemSuccess(null)}

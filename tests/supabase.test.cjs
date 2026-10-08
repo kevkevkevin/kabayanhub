@@ -29,12 +29,13 @@ before(async()=>{
  await db.exec(fs.readFileSync('supabase/migrations/202610040002_permission_hardening.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/202610050001_typing_rewards.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/202610070001_kabayan_coins.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/202610070002_play_coin_conversion.sql','utf8'));
  await db.query("insert into auth.users(id,email,raw_user_meta_data) values($1,'a@example.test','{\"role\":\"admin\"}'),($2,'b@example.test','{}')",[a,b]);
  await db.query("insert into public.news(id,data) values('article',$1::jsonb)",[json({title:'News',reward:10,shareReward:5,createdAt:'2026-09-01T00:00:00.000Z'})]);
 });
 after(async()=>{await db?.close();});
 
-test('arcade coins are private, immutable from clients, and separate from redeemable points',async()=>{
+test('arcade coins are private, immutable from clients, and do not change KP during play',async()=>{
  const before=(await db.query('select data from public.users where id=$1',[a])).rows[0].data.points;
  await as(null,async()=>{await assert.rejects(coinWallet());await assert.rejects(coinSpin(a));});
  await as(a,async()=>{
@@ -250,4 +251,40 @@ test('typing rounds credit 10:1 only through trusted service and only once',asyn
  await assert.rejects(db.query('select credit_typing_round($1,$2,100)',[abandoned.id,a]));
  assert.equal((await db.query("select count(*)::integer as n from activities where id=$1",['englishTypingRush_'+round.id])).rows[0].n,1);
  assert.equal((await db.query("select has_function_privilege('anon','credit_typing_round(uuid,uuid,integer)','execute') as allowed")).rows[0].allowed,false);
+});
+
+test('coin conversion is atomic, 10:1, private, and idempotent; marketplace collects virtual items',async()=>{
+ const c='99999999-9999-4999-8999-999999999999';
+ await db.query("insert into auth.users(id,email) values($1,'conversion@example.test')",[c]);
+ const convert=(id,coins)=>db.query('select convert_arcade_coins($1,$2) as result',[id,coins]).then(r=>r.rows[0].result);
+ await as(null,()=>assert.rejects(convert(a,100)));
+ await as(c,async()=>{
+  assert.equal((await coinWallet()).balance,1000);
+  const [first,retry]=await Promise.all([convert(a,100),convert(a,500)]);
+  assert.deepEqual(first,retry); assert.equal(first.earned,10); assert.equal(first.points,10); assert.equal(first.balance,900);
+  assert.equal((await db.query("select count(*)::integer as n from arcade_transactions where kind='conversion'")).rows[0].n,1);
+  assert.equal((await query('activities',[],c)).filter(x=>x.data.type==='coin_conversion').length,1);
+  for(const amount of [null,-10,0,11,1.5,1000010,910]) await assert.rejects(convert(b,amount));
+  await assert.rejects(convert(null,10));
+  assert.equal((await coinWallet()).balance,900);
+  await assert.rejects(db.query("update arcade_conversions set result='{}' where user_id=$1",[c]));
+ });
+ await as(b,async()=>{assert.equal((await db.query('select * from arcade_conversions where user_id=$1',[c])).rows.length,0);});
+ await db.query("update users set data=data||'{\"points\":2147483647}'::jsonb where id=$1",[c]);
+ await as(c,async()=>{await assert.rejects(convert(b,10),/limit/);assert.equal((await coinWallet()).balance,900);});
+ await db.query("update users set data=data||'{\"points\":10}'::jsonb where id=$1",[c]);
+ await as(c,async()=>{
+  const outcomes=await Promise.allSettled([convert(b,900),convert(c,900)]);
+  assert.equal(outcomes.filter(x=>x.status==='fulfilled').length,1);
+  assert.equal((await coinWallet()).balance,0);
+  assert.equal((await query('users'))[0].data.points,100);
+  assert.equal((await db.query('select count(*)::integer as n from arcade_conversions')).rows[0].n,2);
+ });
+ await db.query("insert into marketplace_items(id,data) values('virtual-test','{\"title\":\"Virtual badge\",\"price\":10,\"stock\":1}')");
+ await as(c,async()=>{
+  const collected=(await db.query("select redeem_item('virtual-test') as result")).rows[0].result;
+  assert.equal(collected.points,90);assert.equal(collected.stock,0);
+  const item=(await query('marketplace_purchases'))[0].data;
+  assert.equal(item.virtualOnly,true);assert.equal(item.status,'redeemed');assert.ok(item.redeemedAt);
+ });
 });
