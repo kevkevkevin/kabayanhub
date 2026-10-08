@@ -527,6 +527,7 @@ export default function DashboardPage() {
            <div className="flex items-center gap-3 mb-6">
               <span className="bg-yellow-100 text-yellow-700 p-2.5 rounded-xl text-xl">👑</span>
               <h2 className="font-bold text-lg text-slate-800">Top Kabayans</h2>
+              <button type="button" className="ml-auto text-xs font-bold text-blue-600" onClick={() => router.push('/leaderboard')}>View leaderboard →</button>
            </div>
            
            <div className="space-y-3">

@@ -32,6 +32,7 @@ before(async()=>{
   await db.exec(fs.readFileSync('supabase/migrations/202610070001_kabayan_coins.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/202610070002_play_coin_conversion.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/202610080001_admin_users.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/202610080002_kp_leaderboard.sql','utf8'));
  await db.query("insert into auth.users(id,email,raw_user_meta_data) values($1,'a@example.test','{\"role\":\"admin\"}'),($2,'b@example.test','{}')",[a,b]);
  await db.query("insert into public.news(id,data) values('article',$1::jsonb)",[json({title:'News',reward:10,shareReward:5,createdAt:'2026-09-01T00:00:00.000Z'})]);
 });
@@ -340,4 +341,29 @@ test('admin users enforce roles, stale balance checks, audit logs, blocking, and
  assert.equal((await db.query("select * from social_posts where id='admin-delete-post'")).rows.length,0);
  assert.equal((await db.query("select * from job_applications where data->>'uid'=$1",[member])).rows.length,0);
  assert.equal((await db.query('select * from admin_user_audit where target_id=$1',[member])).rows.length,4);
+});
+
+test('KP leaderboard sorts current balances, shares ranks for ties, excludes blocked accounts, and keeps emails private',async()=>{
+ const ids=['10101010-1010-4010-8010-101010101010','20202020-2020-4020-8020-202020202020','30303030-3030-4030-8030-303030303030'];
+ await db.query("select set_config('request.jwt.claim.sub','',false)");
+ for(let i=0;i<3;i++) {
+  await db.query('insert into auth.users(id,email) values($1,$2)',[ids[i],`rank-${i}@example.test`]);
+  await db.query("update users set data=data||jsonb_build_object('points',$2::integer,'username',$3::text) where id=$1",[ids[i],i<2?123456:123455,`rank_${i}`]);
+ }
+ const ranks=()=>db.query('select get_kp_leaderboard() as result').then(r=>r.rows[0].result);
+ await as(null,()=>assert.rejects(ranks()));
+ await as(ids[2],async()=>{
+  const result=await ranks();
+  assert.deepEqual(result.members.slice(0,3).map(x=>x.rank),[1,1,3]);
+  assert.equal(result.me.rank,3);assert.equal(result.me.points,123455);
+  assert.deepEqual(Object.keys(result.members[0]).sort(),['displayName','id','points','rank','username']);
+ });
+ await db.query("select set_config('request.jwt.claim.sub','',false)");
+ await db.query("update users set data=data||'{\"points\":1,\"blocked\":true}'::jsonb where id=$1",[ids[0]]);
+ await db.query("update users set data=data||'{\"points\":999999}'::jsonb where id=$1",[ids[2]]);
+ await as(ids[0],()=>assert.rejects(ranks()));
+ await as(ids[2],async()=>{
+  const result=await ranks();assert.equal(result.members[0].id,ids[2]);assert.equal(result.me.rank,1);
+  assert.ok(!result.members.some(x=>x.id===ids[0]));
+ });
 });

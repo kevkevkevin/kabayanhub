@@ -158,7 +158,6 @@ export default function MarketplacePage() {
       <nav className="kh-market-links" aria-label="Explore the market">
         <Link href="/market/jobs">Find a job <span aria-hidden="true">↗</span></Link>
         <Link href="/market/restaurants">Pinoy restaurants <span aria-hidden="true">↗</span></Link>
-        <Link href="/market/supermarkets">Supermarkets <span aria-hidden="true">↗</span></Link>
       </nav>
 
       {status && (

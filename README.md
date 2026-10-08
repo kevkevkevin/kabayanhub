@@ -58,3 +58,7 @@ Firebase configuration and `test:legacy:*` scripts remain for rollback/reference
 Blocking sets a protected database flag and synchronizes an Auth ban. Restrictive RLS and write triggers stop existing blocked sessions; trusted typing rewards also reject blocked targets. Account deletion first blocks access, removes the avatar through Storage, and deletes the Auth account with database cleanup/cascades for its profile, balances, social content, and personal records. The audit record remains. Failed cleanup leaves the account blocked with a retryable deletion. Administrator accounts cannot be blocked or deleted through this page. No existing members are modified during deployment.
 
 `node --env-file=.env.local --import tsx scripts/verify-admin-users.ts` explicitly exercises the hosted admin API with disposable accounts, then deletes those exact accounts.
+
+## KP leaderboard
+
+`/leaderboard` ranks active members by their current KP balance, with shared ranks for ties, a top-50 list, and the signed-in member's own rank. The member-only RPC exposes names, usernames, and KP without email or private account fields. The page refreshes every 30 seconds while visible and on returning to the tab. Public Supermarket navigation is temporarily hidden; its routes and administration remain available.

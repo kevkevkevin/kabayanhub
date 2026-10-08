@@ -59,7 +59,7 @@ export default function RootLayout({
                 <p>Connecting Filipino hearts and everyday lives in Saudi Arabia. One hub. One Kabayan family.</p>
               </div>
               <nav className="kh-footer-links" aria-label="Footer navigation">
-                <div><strong>Explore</strong><Link href="/news">News & updates</Link><Link href="/community">Community</Link><Link href="/tambayan">Live Tambayan</Link><Link href="/market/jobs">Job board</Link></div>
+                <div><strong>Explore</strong><Link href="/news">News & updates</Link><Link href="/community">Community</Link><Link href="/leaderboard">KP leaderboard</Link><Link href="/tambayan">Live Tambayan</Link><Link href="/market/jobs">Job board</Link></div>
                 <div><strong>For your everyday</strong><Link href="/videos">Learn & tutorials</Link><Link href="/budget">Budget tracker</Link><Link href="/marketplace">Marketplace</Link></div>
                 <div><strong>Your hub</strong><Link href="/dashboard">My dashboard</Link><Link href="/settings">Profile & settings</Link><Link href="/#help-desk">Government portals</Link></div>
               </nav>

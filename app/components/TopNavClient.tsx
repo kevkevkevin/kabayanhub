@@ -16,7 +16,7 @@ const groups = [
     ["Arabic Word Rush", "/arabic-word-rush"], ["Baybayin translator", "/baybayin"], ["Baybayin cards", "/baybayin-card"],
   ] },
   { label: "Daily tools", links: [["Budget tracker", "/budget"], ["Calorie tracker", "/calorie-tracker"]] },
-  { label: "Discover", links: [["Kabayan Cascade · Arcade", "/kabayan-cascade"], ["Rewards marketplace", "/marketplace"], ["Job board", "/market/jobs"], ["Restaurants", "/market/restaurants"], ["Supermarkets", "/market/supermarkets"]] },
+  { label: "Discover", links: [["KP leaderboard", "/leaderboard"], ["Kabayan Cascade · Arcade", "/kabayan-cascade"], ["Rewards marketplace", "/marketplace"], ["Job board", "/market/jobs"], ["Restaurants", "/market/restaurants"]] },
 ];
 
 export default function TopNavClient() {
