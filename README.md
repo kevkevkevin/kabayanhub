@@ -50,3 +50,11 @@ npm run build
 `npm test` runs PostgreSQL permissions/transaction tests in PGlite and the Arabic game tests without touching hosted data. The explicit `npm run test:hosted` command uses an authenticated Supabase CLI to create disposable hosted accounts; see the migration guide before using it. Clean up with `node scripts/verify-supabase.cjs --cleanup` after browser verification.
 
 Firebase configuration and `test:legacy:*` scripts remain for rollback/reference. They are not the active backend. The old Firebase project has not been deleted.
+
+## Admin user management
+
+`/admin/users` offers paginated email/name/username searches, KP and coin balances, account dates, balance editing, blocking/unblocking, and confirmed permanent deletion. Server requests verify the administrator's current database role. Balance edits use expected previous balances and the shared wallet lock, preventing gameplay or conversion from being overwritten. An idempotent request ID records each change once in the admin-only `admin_user_audit` table; coin and KP adjustments also appear in member histories.
+
+Blocking sets a protected database flag and synchronizes an Auth ban. Restrictive RLS and write triggers stop existing blocked sessions; trusted typing rewards also reject blocked targets. Account deletion first blocks access, removes the avatar through Storage, and deletes the Auth account with database cleanup/cascades for its profile, balances, social content, and personal records. The audit record remains. Failed cleanup leaves the account blocked with a retryable deletion. Administrator accounts cannot be blocked or deleted through this page. No existing members are modified during deployment.
+
+`node --env-file=.env.local --import tsx scripts/verify-admin-users.ts` explicitly exercises the hosted admin API with disposable accounts, then deletes those exact accounts.

@@ -7,6 +7,7 @@ import Icon, { type IconName } from "../components/Icon";
 
 type Summary = { members: number; articles: number; posts: number; reports: number; pending: number; news: { id: string; title: string; tag: string; date: string }[] };
 const tools: { title: string; description: string; href: string; icon: IconName; tone: string }[] = [
+  { title: "Users", description: "View members, edit KP and coins, and manage account access.", href: "/admin/users", icon: "users", tone: "blue" },
   { title: "News & articles", description: "Publish helpful updates and stories from home.", href: "/admin/news", icon: "news", tone: "blue" },
   { title: "Tutorials", description: "Add videos and everyday learning resources.", href: "/admin/content", icon: "play", tone: "red" },
   { title: "Rewards", description: "Manage rewards, point prices, and available stock.", href: "/admin/content?section=marketplace", icon: "gift", tone: "yellow" },

@@ -19,6 +19,7 @@ const coinSpin=(id,stake=10)=>db.query('select public.play_kabayan_cascade($1,$2
 before(async()=>{
  db=new PGlite();
  await db.exec(`create role anon; create role authenticated; create role service_role bypassrls; create schema auth; create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb default '{}');
+ alter table auth.users add created_at timestamptz default now(),add last_sign_in_at timestamptz,add email_confirmed_at timestamptz;
  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid $$;
  grant usage on schema auth to anon,authenticated; grant execute on function auth.uid() to anon,authenticated;`);
  await db.exec(fs.readFileSync('supabase/migrations/202609300001_hub.sql','utf8'));
@@ -30,6 +31,7 @@ before(async()=>{
   await db.exec(fs.readFileSync('supabase/migrations/202610050001_typing_rewards.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/202610070001_kabayan_coins.sql','utf8'));
   await db.exec(fs.readFileSync('supabase/migrations/202610070002_play_coin_conversion.sql','utf8'));
+  await db.exec(fs.readFileSync('supabase/migrations/202610080001_admin_users.sql','utf8'));
  await db.query("insert into auth.users(id,email,raw_user_meta_data) values($1,'a@example.test','{\"role\":\"admin\"}'),($2,'b@example.test','{}')",[a,b]);
  await db.query("insert into public.news(id,data) values('article',$1::jsonb)",[json({title:'News',reward:10,shareReward:5,createdAt:'2026-09-01T00:00:00.000Z'})]);
 });
@@ -287,4 +289,55 @@ test('coin conversion is atomic, 10:1, private, and idempotent; marketplace coll
   const item=(await query('marketplace_purchases'))[0].data;
   assert.equal(item.virtualOnly,true);assert.equal(item.status,'redeemed');assert.ok(item.redeemedAt);
  });
+});
+
+test('admin users enforce roles, stale balance checks, audit logs, blocking, and deletion cleanup',async()=>{
+ const manager='aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', member='bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+ await db.query("select set_config('request.jwt.claim.sub','',false)");
+ await db.query("insert into auth.users(id,email) values($1,'admin-fixture@example.test'),($2,'member-fixture@example.test')",[manager,member]);
+ await db.query("update users set data=data||'{\"role\":\"admin\"}'::jsonb where id=$1",[manager]);
+ const action=(id,kind,values,target=member)=>db.query('select admin_user_action($1,$2,$3,$4::jsonb) as result',[id,target,kind,json({reason:'Verification',...values})]).then(r=>r.rows[0].result);
+ const list=()=>db.query("select admin_list_users('member-fixture',0,'all') as result").then(r=>r.rows[0].result);
+ await as(null,()=>assert.rejects(list()));
+ await as(member,async()=>{await assert.rejects(list());await assert.rejects(action(a,'balances',{points:10,coins:500,expectedPoints:0,expectedCoins:1000}));});
+ await as(manager,async()=>{
+  const found=await list();assert.equal(found.total,1);assert.equal(found.users[0].email,'member-fixture@example.test');assert.equal(found.users[0].coins,1000);
+  const values={points:50,coins:800,expectedPoints:0,expectedCoins:1000};
+  const [first,retry]=await Promise.all([action(a,'balances',values),action(a,'balances',values)]);
+  assert.deepEqual(first,retry);assert.equal(first.points,50);assert.equal(first.coins,800);
+  await assert.rejects(action(b,'balances',values),/Balances changed/);
+  await assert.rejects(action(b,'balances',{points:-1,coins:800,expectedPoints:50,expectedCoins:800}));
+  await assert.rejects(action(b,'block',{},manager),/Administrator/);
+  await assert.rejects(action(b,'delete',{},manager),/Administrator/);
+  const audit=await db.query('select * from admin_user_audit where request_id=$1',[a]);assert.equal(audit.rows.length,1);assert.equal(audit.rows[0].before_state.coins,1000);
+ });
+ await as(member,async()=>{
+  assert.equal((await coinWallet()).balance,800);
+  assert.equal((await query('users'))[0].data.points,50);
+  await profile('admin_delete_fixture');
+  await write('social_posts','admin-delete-post',{uid:member,text:'Disposable post'});
+  await write('job_applications','admin-delete-job',{uid:member,jobId:'job',status:'pending'});
+ });
+ await as(manager,()=>action(b,'block',{}));
+ await as(member,async()=>{
+  assert.equal((await query('users')).length,0);
+  assert.equal((await db.query('select * from admin_user_audit')).rows.length,0);
+  await assert.rejects(coinWallet(),/blocked/);
+  await assert.rejects(db.query("select claim_reward('daily_checkin')"),/blocked/);
+  await assert.rejects(profile('blocked_member'),/blocked/);
+  await assert.rejects(write('users',member,{blocked:false},'merge'));
+  await assert.rejects(write('tambayan_chat','blocked-message',{uid:member,text:'Not allowed'}));
+ });
+ await db.query("select set_config('request.jwt.claim.sub','',false)");
+ await assert.rejects(db.query('select credit_typing_round($1,$2,10)',[a,member]),/blocked/);
+ await as(manager,()=>action('cccccccc-cccc-4ccc-8ccc-cccccccccccc','unblock',{}));
+ await as(member,()=>assert.doesNotReject(coinWallet()));
+ await as(manager,()=>action('dddddddd-dddd-4ddd-8ddd-dddddddddddd','delete',{}));
+ await db.query("select set_config('request.jwt.claim.sub','',false)");
+ await db.query('delete from auth.users where id=$1',[member]);
+ assert.equal((await db.query('select * from public.users where id=$1',[member])).rows.length,0);
+ assert.equal((await db.query('select * from arcade_wallets where user_id=$1',[member])).rows.length,0);
+ assert.equal((await db.query("select * from social_posts where id='admin-delete-post'")).rows.length,0);
+ assert.equal((await db.query("select * from job_applications where data->>'uid'=$1",[member])).rows.length,0);
+ assert.equal((await db.query('select * from admin_user_audit where target_id=$1',[member])).rows.length,4);
 });

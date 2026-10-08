@@ -17,6 +17,7 @@ export function useAdmin() {
 const sections: { label: string; links: { title: string; href: string; icon: IconName }[] }[] = [
   { label: "WORKSPACE", links: [
     { title: "Overview", href: "/admin", icon: "home" },
+    { title: "Users", href: "/admin/users", icon: "users" },
     { title: "News & articles", href: "/admin/news", icon: "news" },
     { title: "Tutorials & rewards", href: "/admin/content", icon: "gift" },
     { title: "Community reports", href: "/admin/community", icon: "shield" },

@@ -111,6 +111,7 @@ function formatActivityType(t: string): string {
     case "video_share": return "Shared tutorial";
     case "market_redeem": return "Collected virtual item";
     case "coin_conversion": return "Coins converted to KP";
+    case "admin_adjustment": return "Admin balance adjustment";
     default: return t.replace(/_/g, " ");
   }
 }

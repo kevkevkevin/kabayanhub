@@ -36,6 +36,8 @@ export default function LoginPage() {
           ? "Invalid email or password."
           : (err as { code?: string })?.code === "email_not_confirmed"
           ? "Please confirm your email using the link in your inbox, then log in."
+          : (err as { code?: string })?.code === "user_banned"
+          ? "This account has been blocked by a KabayanHub administrator."
           : "Failed to log in. Please try again."
       );
     } finally {
